@@ -1,0 +1,50 @@
+{
+  "name": "caderno-do-produtor",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "npm run ports:check:web && next dev -p 3020",
+    "build": "next build",
+    "start": "next start -p 3020",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "ports:check": "node scripts/check-ports.mjs --all",
+    "ports:check:web": "node scripts/check-ports.mjs --web",
+    "ports:check:supabase": "node scripts/check-ports.mjs --supabase",
+    "supabase:start": "npm run ports:check:supabase && supabase start",
+    "supabase:stop": "supabase stop",
+    "supabase:status": "supabase status"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "latest",
+    "@supabase/ssr": "latest",
+    "@supabase/supabase-js": "latest",
+    "class-variance-authority": "latest",
+    "clsx": "latest",
+    "lucide-react": "latest",
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "react-hook-form": "latest",
+    "tailwind-merge": "latest",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "latest",
+    "@tailwindcss/postcss": "latest",
+    "@testing-library/jest-dom": "latest",
+    "@testing-library/react": "latest",
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "eslint": "latest",
+    "eslint-config-next": "latest",
+    "jsdom": "latest",
+    "supabase": "^2.109.1",
+    "tailwindcss": "latest",
+    "typescript": "latest",
+    "vitest": "latest"
+  }
+}

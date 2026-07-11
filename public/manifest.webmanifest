@@ -1,0 +1,11 @@
+{
+  "name": "Caderno do Produtor",
+  "short_name": "Caderno",
+  "description": "Gestão da lavoura cafeeira no campo e no escritório.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#f7f6f1",
+  "theme_color": "#065f46",
+  "lang": "pt-BR",
+  "icons": []
+}
