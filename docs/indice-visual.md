@@ -87,3 +87,10 @@ As imagens abaixo seguem a ordem em que o caderno foi fotografado. O identificad
 | ![Material gráfico complementar](imagens/06-comercializacao-e-anexos/IMG_0155.jpg) | IMG_0155 — material gráfico complementar |
 | ![Abertura de comercialização](imagens/06-comercializacao-e-anexos/IMG_0156.jpg) | IMG_0156 — controle de comercialização |
 | ![Tabela final](imagens/06-comercializacao-e-anexos/IMG_0157.jpg) | IMG_0157 — tabela final |
+
+## Complemento do fluxo de caixa
+
+| Imagem | Conteúdo |
+|---|---|
+| ![Apresentação do fluxo de caixa](imagens/07-fluxo-de-caixa/IMG_0158.jpg) | IMG_0158 — finalidade e utilização do fluxo de caixa |
+| ![Tabela anual do fluxo de caixa](imagens/07-fluxo-de-caixa/IMG_0159.jpg) | IMG_0159 — entradas, saídas, investimentos, saldos mensais e saldo acumulado |
