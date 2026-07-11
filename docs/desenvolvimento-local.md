@@ -35,6 +35,8 @@ As portas `57325`, `57326` e `57328` ficam reservadas. Nenhum script encerra pro
 - `npm run supabase:start`: valida as portas e inicia os serviços locais.
 - `npm run typecheck`: valida os tipos.
 - `npm test`: executa os testes automatizados.
+- `npm run test:e2e`: executa os fluxos críticos no Playwright.
+- `npm run test:db`: executa os testes de integração SQL e RLS no Supabase local.
 - `npm run build`: produz o build de produção.
 
 Se uma porta estiver ocupada, a inicialização é cancelada. Inspecione o processo e defina conscientemente outro bloco completo; não interrompa processos pertencentes a outros projetos.

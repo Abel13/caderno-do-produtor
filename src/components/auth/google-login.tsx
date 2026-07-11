@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { LogIn, LoaderCircle } from "lucide-react";
+import { LogIn, Loader } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 
@@ -21,7 +21,7 @@ export function GoogleLogin() {
 
   return (
     <Button size="lg" onClick={signIn} disabled={!configured || loading} className="w-full sm:w-auto">
-      {loading ? <LoaderCircle className="size-5 animate-spin" /> : <LogIn className="size-5" />}
+      {loading ? <Loader className="size-5 animate-spin" aria-hidden="true" /> : <LogIn className="size-5" aria-hidden="true" />}
       Entrar com Google
     </Button>
   );
