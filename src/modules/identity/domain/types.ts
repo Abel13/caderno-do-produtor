@@ -5,7 +5,12 @@ export interface IdentityProfile {
   full_name: string | null;
   avatar_url: string | null;
   last_property_id: string | null;
+  timezone: BrazilianTimezone;
+  measurement_system: "metric";
+  internal_notifications_enabled: boolean;
 }
+
+export type BrazilianTimezone = "America/Sao_Paulo" | "America/Manaus" | "America/Cuiaba" | "America/Rio_Branco" | "America/Noronha";
 
 export interface IdentityMembership {
   id: string;
@@ -46,4 +51,15 @@ export interface AccountInvitation {
   status: "pending" | "accepted" | "revoked";
   property_ids: string[];
   created_at: string;
+}
+
+export interface AdministrativeAuditEvent {
+  id: number;
+  table_name: "account_invitations" | "account_memberships";
+  record_id: string;
+  action: "insert" | "update";
+  old_data: { role?: string; status?: string; property_ids?: string[] } | null;
+  new_data: { role?: string; status?: string; property_ids?: string[] } | null;
+  created_at: string;
+  actor: { full_name: string | null } | null;
 }

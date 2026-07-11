@@ -343,6 +343,6 @@ O sistema deve acompanhar a execução das recomendações e relacioná-la aos r
 - Confirmar o nome e a finalidade do tópico 12, repetido como “Controle pluviométrico” no sumário fotografado.
 - Validar todos os campos das tabelas a partir de fotos frontais e em maior resolução.
 - Definir quais escalas, unidades e indicadores agronômicos serão padronizados.
-- Definir regras de acesso entre produtor, técnico, gestor e administrador.
+- Regras de acesso validadas para a primeira versão: proprietário administra gestores e técnicos; gestor administra somente técnicos; técnico acessa apenas propriedades concedidas. Convites e vínculos não expiram automaticamente.
 - Confirmar integrações desejadas com clima, mapas, estoque, emissão fiscal ou sistemas contábeis.
 - Definir o conjunto mínimo do primeiro lançamento do produto.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canManageAccount, canRevokeRole, chooseActiveProperty } from "../domain/permissions";
+import { canInviteRole, canManageAccount, canRevokeRole, chooseActiveProperty } from "../domain/permissions";
 
 describe("identity permissions", () => {
   it("allows only owners and managers to administer an account", () => {
@@ -21,5 +21,13 @@ describe("identity permissions", () => {
     expect(chooseActiveProperty(properties, "b")?.id).toBe("b");
     expect(chooseActiveProperty(properties, "missing")?.id).toBe("a");
     expect(chooseActiveProperty([], "missing")).toBeNull();
+  });
+
+  it("allows only owners to invite managers and managers to invite technicians", () => {
+    expect(canInviteRole("owner", "manager")).toBe(true);
+    expect(canInviteRole("owner", "technician")).toBe(true);
+    expect(canInviteRole("manager", "manager")).toBe(false);
+    expect(canInviteRole("manager", "technician")).toBe(true);
+    expect(canInviteRole("technician", "technician")).toBe(false);
   });
 });

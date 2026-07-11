@@ -24,5 +24,14 @@ export const invitationSchema = z.object({
   }
 });
 
+export const profileSchema = z.object({
+  fullName: z.string().trim().min(2, "Informe seu nome.").max(120),
+  timezone: z.enum(["America/Sao_Paulo", "America/Manaus", "America/Cuiaba", "America/Rio_Branco", "America/Noronha"], {
+    message: "Selecione um fuso horário válido."
+  }),
+  internalNotificationsEnabled: z.boolean()
+});
+
 export type OnboardingInput = z.infer<typeof onboardingSchema>;
 export type InvitationInput = z.infer<typeof invitationSchema>;
+export type ProfileInput = z.infer<typeof profileSchema>;

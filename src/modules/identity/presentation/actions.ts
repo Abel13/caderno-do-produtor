@@ -2,16 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { ZodError } from "zod";
-import { completeProducerOnboarding, createAccountInvitation, revokeAccountInvitation, revokeMembership, setActiveProperty } from "../application/use-cases";
-import { invitationSchema, onboardingSchema } from "../domain/schemas";
+import { completeProducerOnboarding, createAccountInvitation, revokeAccountInvitation, revokeMembership, setActiveProperty, signOut, updateProfile } from "../application/use-cases";
+import { invitationSchema, onboardingSchema, profileSchema } from "../domain/schemas";
 import { getIdentityRepository, requireIdentityContext, requireUser } from "../infrastructure/supabase/server-context";
 import type { ActionState } from "./action-state";
-
-function errorState(error: unknown): ActionState {
-  if (error instanceof ZodError) return { status: "error", message: "Revise os campos destacados.", fieldErrors: error.flatten().fieldErrors };
-  return { status: "error", message: "Não foi possível concluir a operação. Tente novamente." };
-}
+import { errorState } from "./action-errors";
 
 export async function completeOnboardingAction(_: ActionState, formData: FormData): Promise<ActionState> {
   try {
@@ -69,4 +64,25 @@ export async function revokeMembershipAction(formData: FormData) {
   const repository = await getIdentityRepository();
   await revokeMembership(repository, String(formData.get("membershipId") ?? ""));
   revalidatePath("/settings/access");
+}
+
+export async function updateProfileAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  try {
+    const { repository } = await requireUser();
+    const input = profileSchema.parse({
+      fullName: formData.get("fullName"),
+      timezone: formData.get("timezone"),
+      internalNotificationsEnabled: formData.get("internalNotificationsEnabled") === "on"
+    });
+    await updateProfile(repository, input);
+    revalidatePath("/settings/profile");
+    revalidatePath("/dashboard");
+    return { status: "success", message: "Preferências salvas." };
+  } catch (error) { return errorState(error); }
+}
+
+export async function signOutAction() {
+  const repository = await getIdentityRepository();
+  await signOut(repository);
+  redirect("/");
 }

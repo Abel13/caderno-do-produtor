@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { invitationSchema, onboardingSchema } from "../domain/schemas";
+import { invitationSchema, onboardingSchema, profileSchema } from "../domain/schemas";
 
 describe("identity schemas", () => {
   it("normalizes decimal area and accepts complete onboarding data", () => {
@@ -19,5 +19,17 @@ describe("identity schemas", () => {
   it("allows managers without property selection and normalizes email", () => {
     const result = invitationSchema.parse({ accountId: crypto.randomUUID(), email: " Gestor@Example.COM ", role: "manager", propertyIds: [] });
     expect(result.email).toBe("gestor@example.com");
+  });
+});
+
+describe("profileSchema", () => {
+  it("accepts Brazilian defaults", () => {
+    expect(profileSchema.parse({ fullName: "Maria Silva", timezone: "America/Sao_Paulo", internalNotificationsEnabled: true })).toEqual({
+      fullName: "Maria Silva", timezone: "America/Sao_Paulo", internalNotificationsEnabled: true
+    });
+  });
+
+  it("rejects unsupported timezones and short names", () => {
+    expect(profileSchema.safeParse({ fullName: "M", timezone: "UTC", internalNotificationsEnabled: true }).success).toBe(false);
   });
 });

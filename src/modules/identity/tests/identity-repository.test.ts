@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { accountMemberSelect, throwSupabaseError } from "../infrastructure/supabase/identity-repository";
+import { accountMemberSelect, isMissingSessionError, throwSupabaseError } from "../infrastructure/supabase/identity-repository";
 
 describe("accountMemberSelect", () => {
   it("embeds the membership user instead of the inviter", () => {
@@ -20,5 +20,14 @@ describe("throwSupabaseError", () => {
     const failure = new Error("Network unavailable");
 
     expect(() => throwSupabaseError(failure)).toThrow(failure);
+  });
+});
+
+describe("isMissingSessionError", () => {
+  it("distinguishes an absent session from a technical authentication failure", () => {
+    const missing = new Error("Auth session missing!");
+    missing.name = "AuthSessionMissingError";
+    expect(isMissingSessionError(missing)).toBe(true);
+    expect(isMissingSessionError(new Error("Network unavailable"))).toBe(false);
   });
 });

@@ -1,4 +1,4 @@
-import { invitationSchema, onboardingSchema, type InvitationInput, type OnboardingInput } from "../domain/schemas";
+import { invitationSchema, onboardingSchema, profileSchema, type InvitationInput, type OnboardingInput, type ProfileInput } from "../domain/schemas";
 import type { IdentityRepository } from "../infrastructure/supabase/identity-repository";
 
 export async function completeProducerOnboarding(repository: IdentityRepository, input: OnboardingInput) {
@@ -23,4 +23,12 @@ export async function revokeAccountInvitation(repository: IdentityRepository, in
 
 export async function revokeMembership(repository: IdentityRepository, membershipId: string) {
   return repository.revokeMembership(membershipId);
+}
+
+export async function updateProfile(repository: IdentityRepository, input: ProfileInput) {
+  return repository.updateProfile(profileSchema.parse(input));
+}
+
+export async function signOut(repository: IdentityRepository) {
+  return repository.signOut();
 }

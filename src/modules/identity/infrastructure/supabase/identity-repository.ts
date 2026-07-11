@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { IdentityContext, AccountInvitation, AccountMember } from "../../domain/types";
-import type { InvitationInput, OnboardingInput } from "../../domain/schemas";
+import type { IdentityContext, AccountInvitation, AccountMember, AdministrativeAuditEvent } from "../../domain/types";
+import type { InvitationInput, OnboardingInput, ProfileInput } from "../../domain/schemas";
 
 type SupabaseErrorShape = {
   code?: unknown;
@@ -22,11 +22,16 @@ export function throwSupabaseError(error: unknown): never {
   throw new Error(`Supabase request failed${code}: ${message}`, { cause: error });
 }
 
+export function isMissingSessionError(error: unknown) {
+  return error instanceof Error && (error.name === "AuthSessionMissingError" || error.message.toLowerCase().includes("auth session missing"));
+}
+
 export class IdentityRepository {
   constructor(private readonly supabase: SupabaseClient) {}
 
   async getAuthenticatedUser() {
     const { data, error } = await this.supabase.auth.getUser();
+    if (error && isMissingSessionError(error)) return null;
     if (error) throwSupabaseError(error);
     return data.user;
   }
@@ -90,12 +95,27 @@ export class IdentityRepository {
     if (error) throwSupabaseError(error);
   }
 
+  async updateProfile(input: ProfileInput) {
+    const { error } = await this.supabase.rpc("update_my_profile", {
+      target_full_name: input.fullName,
+      target_timezone: input.timezone,
+      target_internal_notifications_enabled: input.internalNotificationsEnabled
+    });
+    if (error) throwSupabaseError(error);
+  }
+
+  async signOut() {
+    const { error } = await this.supabase.auth.signOut();
+    if (error) throwSupabaseError(error);
+  }
+
   async listMembers(accountId: string): Promise<AccountMember[]> {
     const { data, error } = await this.supabase
       .from("account_memberships")
       .select(accountMemberSelect)
       .eq("account_id", accountId)
       .eq("status", "active")
+      .in("role", ["owner", "manager", "technician"])
       .order("created_at");
     if (error) throwSupabaseError(error);
     return data as unknown as AccountMember[];
@@ -118,5 +138,17 @@ export class IdentityRepository {
       created_at: item.created_at,
       property_ids: (item.invitation_properties ?? []).map((property: { property_id: string }) => property.property_id)
     })) as AccountInvitation[];
+  }
+
+  async listAdministrativeAudit(accountId: string, limit = 20): Promise<AdministrativeAuditEvent[]> {
+    const { data, error } = await this.supabase
+      .from("audit_log")
+      .select("id,table_name,record_id,action,old_data,new_data,created_at,actor:profiles!audit_log_actor_user_id_fkey(full_name)")
+      .eq("account_id", accountId)
+      .in("table_name", ["account_invitations", "account_memberships"])
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    if (error) throwSupabaseError(error);
+    return data as unknown as AdministrativeAuditEvent[];
   }
 }

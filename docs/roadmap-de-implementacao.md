@@ -77,10 +77,10 @@ Garantir isolamento, acesso controlado e colaboração entre produtores, técnic
 - Conta ou organização rural.
 - Cadastro separado de pessoa e usuário autenticado.
 - Convites e vínculos com organizações.
-- Papéis: proprietário, produtor, gestor, técnico, colaborador e consulta.
-- Situação e período de validade dos vínculos.
+- Papéis disponíveis na primeira versão: proprietário, gestor e técnico. Os demais valores permanecem reservados no modelo, sem exposição na aplicação.
+- Situação dos vínculos, encerrados somente por revogação explícita e sem expiração automática.
 - Políticas RLS para todas as tabelas da etapa.
-- Perfil, preferências de moeda, unidades, fuso horário e notificações.
+- Perfil, moeda BRL, sistema métrico, fuso horário brasileiro e notificações internas.
 - Auditoria de acessos e alterações administrativas.
 
 ### Dependências

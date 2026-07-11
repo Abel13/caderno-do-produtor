@@ -10,6 +10,10 @@ export function canRevokeRole(actor: AccountRole, target: AccountRole) {
   return actor === "manager" && target === "technician";
 }
 
+export function canInviteRole(actor: AccountRole, target: "manager" | "technician") {
+  return actor === "owner" || (actor === "manager" && target === "technician");
+}
+
 export function chooseActiveProperty<T extends { id: string }>(properties: T[], preferredId?: string | null) {
   return properties.find((property) => property.id === preferredId) ?? properties[0] ?? null;
 }
