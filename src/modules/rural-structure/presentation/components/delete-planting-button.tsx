@@ -1,0 +1,4 @@
+"use client";
+import{useActionState}from"react";import{Button}from"@/components/ui/button";import{deletePlantingAction,type StructureActionState}from"../actions";
+const initial:StructureActionState={status:"idle"};
+export function DeletePlantingButton({plantingId}:{plantingId:string}){const[state,action,pending]=useActionState(deletePlantingAction,initial);return <div><form action={action} onSubmit={(event)=>{if(!window.confirm("Excluir esta lavoura? Esta ação só será permitida se ela nunca tiver sido utilizada."))event.preventDefault()}}><input type="hidden" name="plantingId" value={plantingId}/><Button type="submit" variant="ghost" size="sm" disabled={pending} className="text-red-700">{pending?"Excluindo...":"Excluir"}</Button></form>{state.message&&<p role="status" className={state.status==="error"?"mt-2 text-sm text-red-700":"mt-2 text-sm text-emerald-700"}>{state.message}</p>}</div>}

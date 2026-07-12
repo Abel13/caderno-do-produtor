@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canInviteRole, canManageAccount, canRevokeRole, chooseActiveProperty } from "../domain/permissions";
+import { accountRoleLabel, canInviteRole, canManageAccount, canRevokeRole, chooseActiveProperty } from "../domain/permissions";
 
 describe("identity permissions", () => {
   it("allows only owners and managers to administer an account", () => {
@@ -29,5 +29,11 @@ describe("identity permissions", () => {
     expect(canInviteRole("manager", "manager")).toBe(false);
     expect(canInviteRole("manager", "technician")).toBe(true);
     expect(canInviteRole("technician", "technician")).toBe(false);
+  });
+
+  it("presents account roles in Portuguese", () => {
+    expect(accountRoleLabel("owner")).toBe("Proprietário");
+    expect(accountRoleLabel("manager")).toBe("Gestor");
+    expect(accountRoleLabel("technician")).toBe("Técnico");
   });
 });

@@ -1,0 +1,4 @@
+"use client";
+import{useActionState}from"react";import{Button}from"@/components/ui/button";import{deletePlotAction,type StructureActionState}from"../actions";
+const initial:StructureActionState={status:"idle"};
+export function DeletePlotButton({plotId}:{plotId:string}){const[state,action,pending]=useActionState(deletePlotAction,initial);return <div><form action={action} onSubmit={event=>{if(!window.confirm("Excluir este talhão? A exclusão só será permitida se ele nunca tiver sido utilizado."))event.preventDefault()}}><input type="hidden" name="plotId" value={plotId}/><Button type="submit" variant="ghost" size="sm" disabled={pending} className="text-red-700">{pending?"Excluindo...":"Excluir"}</Button></form>{state.message&&<p role="status" className={state.status==="error"?"mt-2 max-w-xs text-sm text-red-700":"mt-2 text-sm text-emerald-700"}>{state.message}</p>}</div>}

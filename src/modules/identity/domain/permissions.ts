@@ -14,6 +14,11 @@ export function canInviteRole(actor: AccountRole, target: "manager" | "technicia
   return actor === "owner" || (actor === "manager" && target === "technician");
 }
 
+export function accountRoleLabel(role: AccountRole) {
+  const labels: Record<AccountRole, string> = { owner: "Proprietário", producer: "Produtor", manager: "Gestor", technician: "Técnico", collaborator: "Colaborador", viewer: "Consulta" };
+  return labels[role];
+}
+
 export function chooseActiveProperty<T extends { id: string }>(properties: T[], preferredId?: string | null) {
   return properties.find((property) => property.id === preferredId) ?? properties[0] ?? null;
 }
