@@ -1,18 +1,247 @@
 "use server";
+
 import { revalidatePath } from "next/cache";
 import { ZodError } from "zod";
+
 import { createClient } from "@/lib/supabase/server";
-import { plantingSchema, plotSchema, seasonSchema } from "../domain/schemas";
+
+import { plantingSchema, plotSchema, seasonSchema, seasonStatusSchema } from "../domain/schemas";
 import { RuralStructureRepository } from "../infrastructure/supabase/rural-structure-repository";
 
-export interface StructureActionState { status:"idle"|"success"|"error"; message?:string; values?:Record<string,string> }
-const repository=async()=>new RuralStructureRepository(await createClient());
-function valuesOf(formData:FormData){return Object.fromEntries([...formData.entries()].filter((entry):entry is [string,string]=>typeof entry[1]==="string"));}
-function failure(error:unknown,formData:FormData):StructureActionState { const values=valuesOf(formData);if(error instanceof ZodError)return{status:"error",message:error.issues[0]?.message??"Revise os campos.",values};if(error instanceof Error){if(error.message.includes("permission_denied"))return{status:"error",message:"Seu acesso é somente para consulta. Peça ao proprietário ou gestor para cadastrar a safra.",values};if(error.message.includes("planting_area_exceeds_plot"))return{status:"error",message:"A área da lavoura não pode ser maior que a área do talhão selecionado.",values};if(error.message.includes("active_planting_exists"))return{status:"error",message:"Este talhão já possui uma lavoura ativa. Encerre-a antes de cadastrar outra.",values};if(error.message.includes("harvest_seasons_property_id_name_key")||error.message.includes("duplicate key"))return{status:"error",message:"Já existe uma safra com esse nome nesta propriedade. Escolha outro nome ou consulte a safra cadastrada.",values};if(error.message.includes("one_open_season_per_property"))return{status:"error",message:"Já existe uma safra aberta nesta propriedade. Encerre-a antes de abrir outra.",values};if(error.message.includes("harvest_seasons_check"))return{status:"error",message:"A data de término precisa ser posterior à data de início.",values};if(error.message.includes("PGRST202"))return{status:"error",message:"O cadastro de safra ainda não está disponível neste ambiente. Aplique as migrations mais recentes do banco.",values};}return{status:"error",message:"O banco recusou o cadastro por uma regra ainda não identificada. Os dados foram mantidos; informe este código ao suporte: STRUCTURE_SAVE_FAILED.",values};}
-export async function createPlotAction(_:StructureActionState,formData:FormData):Promise<StructureActionState>{try{const input=plotSchema.parse({propertyId:formData.get("propertyId"),name:formData.get("name"),areaHa:formData.get("areaHa"),status:formData.get("status")});await(await repository()).createPlot(input);revalidatePath("/structure");return{status:"success",message:"Talhão cadastrado."}}catch(error){return failure(error,formData)}}
-export async function updatePlotAction(_:StructureActionState,formData:FormData):Promise<StructureActionState>{try{const plotId=String(formData.get("plotId")??"");const input=plotSchema.parse({propertyId:formData.get("propertyId"),name:formData.get("name"),areaHa:formData.get("areaHa"),status:formData.get("status")});await(await repository()).updatePlot(plotId,input);revalidatePath("/structure/plots");revalidatePath("/structure");return{status:"success",message:"Talhão atualizado e histórico preservado."}}catch(error){if(error instanceof Error&&error.message.includes("plot_area_below_active_planting"))return{status:"error",message:"A área não pode ser menor que a área da lavoura ativa neste talhão.",values:valuesOf(formData)};return failure(error,formData)}}
-export async function deletePlotAction(_:StructureActionState,formData:FormData):Promise<StructureActionState>{try{await(await repository()).deletePlot(String(formData.get("plotId")??""));revalidatePath("/structure/plots");revalidatePath("/structure");return{status:"success",message:"Talhão excluído."}}catch(error){if(error instanceof Error&&error.message.includes("plot_in_use"))return{status:"error",message:"Este talhão já possui lavoura ou registro vinculado e não pode ser excluído. Marque-o como inativo ou encerrado para preservar o histórico."};return failure(error,formData)}}
-export async function createPlantingAction(_:StructureActionState,formData:FormData):Promise<StructureActionState>{try{const input=plantingSchema.parse({plotId:formData.get("plotId"),cultivarId:formData.get("cultivarId"),areaHa:formData.get("areaHa"),plantedYear:formData.get("plantedYear"),status:formData.get("status")});await(await repository()).createPlanting(input);revalidatePath("/structure");return{status:"success",message:"Lavoura cadastrada."}}catch(error){return failure(error,formData)}}
-export async function createSeasonAction(_:StructureActionState,formData:FormData):Promise<StructureActionState>{try{const input=seasonSchema.parse({propertyId:formData.get("propertyId"),name:formData.get("name"),startsOn:formData.get("startsOn"),endsOn:formData.get("endsOn"),status:formData.get("status")});await(await repository()).createSeason(input);revalidatePath("/structure");return{status:"success",message:"Safra cadastrada."}}catch(error){return failure(error,formData)}}
-export async function deletePlantingAction(_:StructureActionState,formData:FormData):Promise<StructureActionState>{try{const plantingId=String(formData.get("plantingId")??"");await(await repository()).deletePlanting(plantingId);revalidatePath("/structure/plantings");revalidatePath("/structure");return{status:"success",message:"Lavoura excluída."}}catch(error){if(error instanceof Error&&error.message.includes("planting_in_use"))return{status:"error",message:"Esta lavoura já está vinculada a uma safra ou registro e não pode ser excluída. Encerre a lavoura para preservar o histórico."};return failure(error,formData)}}
-export async function updatePlantingPhaseAction(_:StructureActionState,formData:FormData):Promise<StructureActionState>{try{const plantingId=String(formData.get("plantingId")??"");const status=String(formData.get("status")??"");if(!["forming","productive","renewing"].includes(status))return{status:"error",message:"Selecione uma fase válida."};await(await repository()).updatePlantingPhase(plantingId,status as "forming"|"productive"|"renewing");revalidatePath("/structure/plantings");revalidatePath("/structure");return{status:"success",message:"Fase da lavoura atualizada."}}catch(error){return failure(error,formData)}}
+export interface StructureActionState {
+  status: "idle" | "success" | "error";
+  message?: string;
+  values?: Record<string, string>;
+}
+
+const repository = async () => new RuralStructureRepository(await createClient());
+
+function valuesOf(formData: FormData) {
+  return Object.fromEntries(
+    [...formData.entries()].filter((entry): entry is [string, string] => typeof entry[1] === "string")
+  );
+}
+
+function failure(error: unknown, formData: FormData): StructureActionState {
+  const values = valuesOf(formData);
+
+  if (error instanceof ZodError) {
+    return { status: "error", message: error.issues[0]?.message ?? "Revise os campos.", values };
+  }
+
+  if (error instanceof Error) {
+    if (error.message.includes("permission_denied")) {
+      return {
+        status: "error",
+        message: "Seu acesso é somente para consulta. Peça ao proprietário ou gestor para cadastrar a safra.",
+        values,
+      };
+    }
+
+    if (error.message.includes("planting_area_exceeds_plot")) {
+      return { status: "error", message: "A área da lavoura não pode ser maior que a área do talhão selecionado.", values };
+    }
+
+    if (error.message.includes("active_planting_exists")) {
+      return { status: "error", message: "Este talhão já possui uma lavoura ativa. Encerre-a antes de cadastrar outra.", values };
+    }
+
+    if (error.message.includes("harvest_seasons_property_id_name_key") || error.message.includes("duplicate key")) {
+      return {
+        status: "error",
+        message: "Já existe uma safra com esse nome nesta propriedade. Escolha outro nome ou consulte a safra cadastrada.",
+        values,
+      };
+    }
+
+    if (error.message.includes("one_open_season_per_property") || error.message.includes("open season")) {
+      return {
+        status: "error",
+        message: "Já existe uma safra aberta nesta propriedade. Encerre-a antes de abrir outra.",
+        values,
+      };
+    }
+
+    if (error.message.includes("harvest_seasons_check")) {
+      return { status: "error", message: "A data de término precisa ser posterior à data de início.", values };
+    }
+
+    if (error.message.includes("season_reopen_requires_owner")) {
+      return { status: "error", message: "A reabertura de safra pode ser feita somente pelo proprietário da conta.", values };
+    }
+
+    if (error.message.includes("season_reopen_requires_reason")) {
+      return { status: "error", message: "Informe uma justificativa para reabrir uma safra encerrada.", values };
+    }
+
+    if (error.message.includes("season_not_found")) {
+      return { status: "error", message: "Safra não encontrada. Atualize a tela e tente novamente.", values };
+    }
+
+    if (error.message.includes("invalid_season_transition")) {
+      return { status: "error", message: "Esta mudança de situação não é permitida para este estado da safra.", values };
+    }
+
+    if (error.message.includes("PGRST202")) {
+      return {
+        status: "error",
+        message: "O cadastro de safra ainda não está disponível neste ambiente. Aplique as migrations mais recentes do banco.",
+        values,
+      };
+    }
+  }
+
+  return {
+    status: "error",
+    message:
+      "O banco recusou o cadastro por uma regra ainda não identificada. Os dados foram mantidos; informe este código ao suporte: STRUCTURE_SAVE_FAILED.",
+    values,
+  };
+}
+
+export async function createPlotAction(_: StructureActionState, formData: FormData): Promise<StructureActionState> {
+  try {
+    const input = plotSchema.parse({
+      propertyId: formData.get("propertyId"),
+      name: formData.get("name"),
+      areaHa: formData.get("areaHa"),
+      status: formData.get("status"),
+    });
+    await (await repository()).createPlot(input);
+    revalidatePath("/structure");
+    return { status: "success", message: "Talhão cadastrado." };
+  } catch (error) {
+    return failure(error, formData);
+  }
+}
+
+export async function updatePlotAction(_: StructureActionState, formData: FormData): Promise<StructureActionState> {
+  try {
+    const plotId = String(formData.get("plotId") ?? "");
+    const input = plotSchema.parse({
+      propertyId: formData.get("propertyId"),
+      name: formData.get("name"),
+      areaHa: formData.get("areaHa"),
+      status: formData.get("status"),
+    });
+    await (await repository()).updatePlot(plotId, input);
+    revalidatePath("/structure/plots");
+    revalidatePath("/structure");
+    return { status: "success", message: "Talhão atualizado e histórico preservado." };
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("plot_area_below_active_planting")) {
+      return { status: "error", message: "A área não pode ser menor que a área da lavoura ativa neste talhão.", values: valuesOf(formData) };
+    }
+    return failure(error, formData);
+  }
+}
+
+export async function deletePlotAction(_: StructureActionState, formData: FormData): Promise<StructureActionState> {
+  try {
+    await (await repository()).deletePlot(String(formData.get("plotId") ?? ""));
+    revalidatePath("/structure/plots");
+    revalidatePath("/structure");
+    return { status: "success", message: "Talhão excluído." };
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("plot_in_use")) {
+      return {
+        status: "error",
+        message:
+          "Este talhão já possui lavoura ou registro vinculado e não pode ser excluído. Marque-o como inativo ou encerrado para preservar o histórico.",
+      };
+    }
+    return failure(error, formData);
+  }
+}
+
+export async function createPlantingAction(_: StructureActionState, formData: FormData): Promise<StructureActionState> {
+  try {
+    const input = plantingSchema.parse({
+      plotId: formData.get("plotId"),
+      cultivarId: formData.get("cultivarId"),
+      areaHa: formData.get("areaHa"),
+      plantedYear: formData.get("plantedYear"),
+      status: formData.get("status"),
+    });
+    await (await repository()).createPlanting(input);
+    revalidatePath("/structure");
+    return { status: "success", message: "Lavoura cadastrada." };
+  } catch (error) {
+    return failure(error, formData);
+  }
+}
+
+export async function createSeasonAction(_: StructureActionState, formData: FormData): Promise<StructureActionState> {
+  try {
+    const input = seasonSchema.parse({
+      propertyId: formData.get("propertyId"),
+      name: formData.get("name"),
+      startsOn: formData.get("startsOn"),
+      endsOn: formData.get("endsOn"),
+      status: formData.get("status"),
+    });
+    await (await repository()).createSeason(input);
+    revalidatePath("/structure");
+    return { status: "success", message: "Safra cadastrada." };
+  } catch (error) {
+    return failure(error, formData);
+  }
+}
+
+export async function updateSeasonStatusAction(
+  _: StructureActionState,
+  formData: FormData
+): Promise<StructureActionState> {
+  try {
+    const input = seasonStatusSchema.parse({
+      seasonId: formData.get("seasonId"),
+      status: formData.get("status"),
+      reopenReason: formData.get("reopenReason"),
+    });
+    const currentStatus = String(formData.get("seasonCurrentStatus") ?? "");
+    if (input.status === "open" && !input.reopenReason && currentStatus === "closed") {
+      return { status: "error", message: "Informe uma justificativa para reabrir a safra." };
+    }
+
+    await (await repository()).updateSeasonStatus(input.seasonId, input.status, input.reopenReason);
+    revalidatePath("/structure/seasons");
+    revalidatePath("/structure");
+    return { status: "success", message: "Situação da safra atualizada." };
+  } catch (error) {
+    return failure(error, formData);
+  }
+}
+
+export async function deletePlantingAction(_: StructureActionState, formData: FormData): Promise<StructureActionState> {
+  try {
+    const plantingId = String(formData.get("plantingId") ?? "");
+    await (await repository()).deletePlanting(plantingId);
+    revalidatePath("/structure/plantings");
+    revalidatePath("/structure");
+    return { status: "success", message: "Lavoura excluída." };
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("planting_in_use")) {
+      return {
+        status: "error",
+        message: "Esta lavoura já está vinculada a uma safra ou registro e não pode ser excluída. Encerre a lavoura para preservar o histórico.",
+      };
+    }
+    return failure(error, formData);
+  }
+}
+
+export async function updatePlantingPhaseAction(_: StructureActionState, formData: FormData): Promise<StructureActionState> {
+  try {
+    const plantingId = String(formData.get("plantingId") ?? "");
+    const status = String(formData.get("status") ?? "");
+    if (!["forming", "productive", "renewing"].includes(status)) {
+      return { status: "error", message: "Selecione uma fase válida." };
+    }
+    await (await repository()).updatePlantingPhase(plantingId, status as "forming" | "productive" | "renewing");
+    revalidatePath("/structure/plantings");
+    revalidatePath("/structure");
+    return { status: "success", message: "Fase da lavoura atualizada." };
+  } catch (error) {
+    return failure(error, formData);
+  }
+}
