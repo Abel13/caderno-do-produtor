@@ -28,7 +28,8 @@ alter table public.operational_records
   alter column client_id drop not null,
   alter column client_id drop default;
 
-drop constraint if exists public.operational_records_client_scope_uniq on public.operational_records;
+alter table public.operational_records
+  drop constraint if exists operational_records_client_scope_uniq;
 create unique index if not exists operational_records_property_client_uq
   on public.operational_records (property_id, client_id)
   where client_id is not null;
