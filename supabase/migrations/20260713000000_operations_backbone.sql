@@ -119,36 +119,20 @@ end $$;
 alter table public.operational_records
   alter column record_type set not null;
 
-do $$
-declare
-  origin_type text;
-begin
-  select n.nspname || '.' || t.typname
-  into origin_type
-  from pg_attribute a
-  join pg_class c on c.oid = a.attrelid
-  join pg_namespace n on n.oid = c.relnamespace
-  join pg_type t on t.oid = a.atttypid
-  where n.nspname = 'public'
-    and c.relname = 'operational_records'
-    and a.attname = 'origin'
-    and a.attnum > 0
-    and not a.attisdropped;
+alter table public.operational_records
+  alter column origin drop default;
 
-  if origin_type = 'public.record_origin' then
-    alter table public.operational_records
-      alter column origin type public.operation_origin using (
-        case origin::text
-          when 'manual' then 'manual'::public.operation_origin
-          when 'pdf' then 'pdf'::public.operation_origin
-          when 'integration' then 'integration'::public.operation_origin
-          when 'system' then 'system'::public.operation_origin
-          when 'import' then 'import'::public.operation_origin
-          else 'manual'::public.operation_origin
-        end
-      );
-  end if;
-end $$;
+alter table public.operational_records
+  alter column origin type public.operation_origin using (
+    case origin::text
+      when 'manual' then 'manual'::public.operation_origin
+      when 'pdf' then 'pdf'::public.operation_origin
+      when 'integration' then 'integration'::public.operation_origin
+      when 'system' then 'system'::public.operation_origin
+      when 'import' then 'import'::public.operation_origin
+      else 'manual'::public.operation_origin
+    end
+  );
 
 alter table public.operational_records
   alter column origin set default 'manual'::public.operation_origin;
