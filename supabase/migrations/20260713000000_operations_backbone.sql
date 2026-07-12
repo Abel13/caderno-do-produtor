@@ -589,24 +589,30 @@ alter table public.operation_types enable row level security;
 alter table public.operation_record_attachments enable row level security;
 alter table public.operation_external_entities enable row level security;
 
-create policy if not exists "operation types read" on public.operation_types
+drop policy if exists "operation types read" on public.operation_types;
+create policy "operation types read" on public.operation_types
   for select using (true);
 
-create policy if not exists "operation records read" on public.operational_records
+drop policy if exists "operation records read" on public.operational_records;
+create policy "operation records read" on public.operational_records
   for select using (public.can_access_property(property_id));
 
-create policy if not exists "operation records insert via rpc" on public.operational_records
+drop policy if exists "operation records insert via rpc" on public.operational_records;
+create policy "operation records insert via rpc" on public.operational_records
   for insert with check (false);
 
-create policy if not exists "operation records update via rpc" on public.operational_records
+drop policy if exists "operation records update via rpc" on public.operational_records;
+create policy "operation records update via rpc" on public.operational_records
   for update using (public.can_manage_operational_records(property_id))
   with check (public.can_manage_operational_records(property_id));
 
-create policy if not exists "operation records delete via rpc" on public.operational_records
+drop policy if exists "operation records delete via rpc" on public.operational_records;
+create policy "operation records delete via rpc" on public.operational_records
   for delete using (public.can_manage_operational_records(property_id))
   with check (public.can_manage_operational_records(property_id));
 
-create policy if not exists "operation attachments read" on public.operation_record_attachments
+drop policy if exists "operation attachments read" on public.operation_record_attachments;
+create policy "operation attachments read" on public.operation_record_attachments
   for select using (
     exists (
       select 1
@@ -616,7 +622,8 @@ create policy if not exists "operation attachments read" on public.operation_rec
     )
   );
 
-create policy if not exists "operation attachments write" on public.operation_record_attachments
+drop policy if exists "operation attachments write" on public.operation_record_attachments;
+create policy "operation attachments write" on public.operation_record_attachments
   for insert with check (
     exists (
       select 1
@@ -626,7 +633,8 @@ create policy if not exists "operation attachments write" on public.operation_re
     )
   );
 
-create policy if not exists "operation attachments update/delete" on public.operation_record_attachments
+drop policy if exists "operation attachments update/delete" on public.operation_record_attachments;
+create policy "operation attachments update/delete" on public.operation_record_attachments
   for update using (
     exists (
       select 1
@@ -641,10 +649,11 @@ create policy if not exists "operation attachments update/delete" on public.oper
       from public.operational_records op
       where op.id = operational_record_id
         and public.can_manage_operational_records(op.property_id)
-    )
+      )
   );
 
-create policy if not exists "operation attachments delete" on public.operation_record_attachments
+drop policy if exists "operation attachments delete" on public.operation_record_attachments;
+create policy "operation attachments delete" on public.operation_record_attachments
   for delete using (
     exists (
       select 1
@@ -654,10 +663,12 @@ create policy if not exists "operation attachments delete" on public.operation_r
     )
   );
 
-create policy if not exists "operation external entities read" on public.operation_external_entities
+drop policy if exists "operation external entities read" on public.operation_external_entities;
+create policy "operation external entities read" on public.operation_external_entities
   for select using (active = true);
 
-create policy if not exists "operation external entities write blocked" on public.operation_external_entities
+drop policy if exists "operation external entities write blocked" on public.operation_external_entities;
+create policy "operation external entities write blocked" on public.operation_external_entities
   for all with check (false);
 
 create or replace function public.can_upload_operational_attachment(storage_record_name text)
@@ -687,7 +698,8 @@ set
   category = excluded.category,
   updated_at = now();
 
-create policy if not exists "storage private operational records read" on storage.objects
+drop policy if exists "storage private operational records read" on storage.objects;
+create policy "storage private operational records read" on storage.objects
   for select using (
     bucket_id = 'private-documents'
     and public.can_access_property(
@@ -695,13 +707,15 @@ create policy if not exists "storage private operational records read" on storag
     )
   );
 
-create policy if not exists "storage private operational records write" on storage.objects
+drop policy if exists "storage private operational records write" on storage.objects;
+create policy "storage private operational records write" on storage.objects
   for insert with check (
     bucket_id = 'private-documents'
     and public.can_upload_operational_attachment(name)
   );
 
-create policy if not exists "storage private operational records write owner" on storage.objects
+drop policy if exists "storage private operational records write owner" on storage.objects;
+create policy "storage private operational records write owner" on storage.objects
   for delete using (
     bucket_id = 'private-documents'
     and public.can_upload_operational_attachment(name)
