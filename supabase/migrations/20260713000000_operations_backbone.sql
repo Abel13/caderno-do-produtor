@@ -36,8 +36,21 @@ create table if not exists public.operation_types (
   updated_at timestamptz not null default now()
 );
 
-alter table public.operation_types
-  add constraint if not exists operation_types_code_format_chk check (code ~ '^[a-z_][a-z0-9_]*$');
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint c
+    join pg_class t on t.oid = c.conrelid
+    join pg_namespace n on n.oid = t.relnamespace
+    where n.nspname = 'public'
+      and t.relname = 'operation_types'
+      and c.conname = 'operation_types_code_format_chk'
+  ) then
+    alter table public.operation_types
+      add constraint operation_types_code_format_chk check (code ~ '^[a-z_][a-z0-9_]*$');
+  end if;
+end $$;
 
 create or replace function public.touch_operation_types()
 returns trigger
@@ -87,8 +100,21 @@ alter table public.operational_records
   add column if not exists client_id uuid not null default gen_random_uuid(),
   add column if not exists deleted_by uuid references public.profiles(id) on delete set null;
 
-alter table public.operational_records
-  add constraint if not exists operational_records_client_scope_uniq unique (property_id, client_id);
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint c
+    join pg_class t on t.oid = c.conrelid
+    join pg_namespace n on n.oid = t.relnamespace
+    where n.nspname = 'public'
+      and t.relname = 'operational_records'
+      and c.conname = 'operational_records_client_scope_uniq'
+  ) then
+    alter table public.operational_records
+      add constraint operational_records_client_scope_uniq unique (property_id, client_id);
+  end if;
+end $$;
 
 alter table public.operational_records
   alter column record_type set not null;
