@@ -1,4 +1,28 @@
-create type if not exists public.operation_origin as enum ('manual', 'pdf', 'import', 'integration', 'system');
+do $$ begin
+  if not exists (
+    select 1
+    from pg_type t
+    join pg_namespace n on n.oid = t.typnamespace
+    where n.nspname = 'public'
+      and t.typname = 'operation_origin'
+  ) then
+    create type public.operation_origin as enum ('manual', 'pdf', 'import', 'integration', 'system');
+  elsif (
+    select t.typtype
+    from pg_type t
+    join pg_namespace n on n.oid = t.typnamespace
+    where n.nspname = 'public'
+      and t.typname = 'operation_origin'
+  ) <> 'e' then
+    raise exception 'operation_origin already exists and is not an enum';
+  end if;
+
+  alter type public.operation_origin add value if not exists 'manual';
+  alter type public.operation_origin add value if not exists 'pdf';
+  alter type public.operation_origin add value if not exists 'import';
+  alter type public.operation_origin add value if not exists 'integration';
+  alter type public.operation_origin add value if not exists 'system';
+end $$;
 
 create table if not exists public.operation_types (
   id uuid primary key default gen_random_uuid(),
