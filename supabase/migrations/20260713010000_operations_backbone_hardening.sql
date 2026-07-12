@@ -483,7 +483,7 @@ create policy "operation records update" on public.operational_records
 drop policy if exists "operation records delete" on public.operational_records;
 create policy "operation records delete" on public.operational_records
   for delete using (false)
-  with check (false);
+;
 
 create or replace function public.can_upload_operational_attachment(storage_record_name text)
 returns boolean
