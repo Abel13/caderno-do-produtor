@@ -120,10 +120,10 @@ alter table public.operational_records
   alter column record_type set not null;
 
 alter table public.operational_records
-  alter column origin set default 'manual'::public.operation_origin;
+  alter column origin type public.operation_origin using (origin::text::public.operation_origin);
 
 alter table public.operational_records
-  alter column origin type public.operation_origin using (origin::public.operation_origin);
+  alter column origin set default 'manual'::public.operation_origin;
 
 do $$ begin
   if not exists (
