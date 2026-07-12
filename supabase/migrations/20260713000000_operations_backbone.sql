@@ -609,7 +609,7 @@ create policy "operation records update via rpc" on public.operational_records
 drop policy if exists "operation records delete via rpc" on public.operational_records;
 create policy "operation records delete via rpc" on public.operational_records
   for delete using (public.can_manage_operational_records(property_id))
-  with check (public.can_manage_operational_records(property_id));
+  ;
 
 drop policy if exists "operation attachments read" on public.operation_record_attachments;
 create policy "operation attachments read" on public.operation_record_attachments
