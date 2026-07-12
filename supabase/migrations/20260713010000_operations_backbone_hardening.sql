@@ -467,14 +467,21 @@ drop policy if exists "authorized users update own records" on public.operationa
 drop policy if exists "authorized users soft delete own records" on public.operational_records;
 
 alter table public.operational_records enable row level security;
-create policy if not exists "operation records read" on public.operational_records
+drop policy if exists "operation records read" on public.operational_records;
+create policy "operation records read" on public.operational_records
   for select using (public.can_access_property(property_id));
-create policy if not exists "operation records insert" on public.operational_records
+
+drop policy if exists "operation records insert" on public.operational_records;
+create policy "operation records insert" on public.operational_records
   for insert with check (false);
-create policy if not exists "operation records update" on public.operational_records
+
+drop policy if exists "operation records update" on public.operational_records;
+create policy "operation records update" on public.operational_records
   for update using (false)
   with check (false);
-create policy if not exists "operation records delete" on public.operational_records
+
+drop policy if exists "operation records delete" on public.operational_records;
+create policy "operation records delete" on public.operational_records
   for delete using (false)
   with check (false);
 
@@ -490,19 +497,22 @@ as $$
   );
 $$;
 
-create policy if not exists "storage private operational records read" on storage.objects
+drop policy if exists "storage private operational records read" on storage.objects;
+create policy "storage private operational records read" on storage.objects
   for select using (
     bucket_id = 'private-documents'
     and public.can_access_property(
       (select property_id from public.operational_records where id = public.extract_operational_record_id_from_path(name))
     )
   );
-create policy if not exists "storage private operational records write" on storage.objects
+drop policy if exists "storage private operational records write" on storage.objects;
+create policy "storage private operational records write" on storage.objects
   for insert with check (
     bucket_id = 'private-documents'
     and public.can_upload_operational_attachment(name)
   );
-create policy if not exists "storage private operational records delete" on storage.objects
+drop policy if exists "storage private operational records delete" on storage.objects;
+create policy "storage private operational records delete" on storage.objects
   for delete using (
     bucket_id = 'private-documents'
     and public.can_upload_operational_attachment(name)
