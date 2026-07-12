@@ -130,6 +130,27 @@ export class RuralStructureRepository {
     if (error) throwSupabaseError(error);
   }
 
+  async linkPlantingSeason(
+    plantingId: string,
+    seasonId: string,
+    conductedAreaHa: number,
+    productiveStatus: "forming" | "productive" | "renewing",
+    productionGoalKg: number | null,
+    productionEstimateKg: number | null,
+    notes: string | null
+  ) {
+    const { error } = await this.supabase.rpc("link_planting_season", {
+      target_planting_id: plantingId,
+      target_season_id: seasonId,
+      target_area_ha: conductedAreaHa,
+      target_productive_status: productiveStatus,
+      target_goal_kg: productionGoalKg,
+      target_estimate_kg: productionEstimateKg,
+      target_notes: notes,
+    });
+    if (error) throwSupabaseError(error);
+  }
+
   async deletePlanting(plantingId: string) {
     const { error } = await this.supabase.rpc("delete_unused_planting", { target_planting_id: plantingId });
     if (error) throwSupabaseError(error);

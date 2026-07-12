@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { SystemAlert } from "@/components/atoms/system-alert";
 import { SeasonSummary } from "@/modules/rural-structure/infrastructure/supabase/rural-structure-repository";
 import { linkPlantingSeasonAction, type StructureActionState } from "../actions";
 
@@ -26,10 +27,15 @@ export function LinkPlantingSeason({
   seasons: Pick<SeasonSummary, "id" | "name" | "status">[];
 }) {
   const [open, setOpen] = useState(false);
+  const [confirmMessage, setConfirmMessage] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const [state, action, pending] = useActionState(
     async (previous: StructureActionState, formData: FormData) => {
       const next = await linkPlantingSeasonAction(previous, formData);
-      if (next.status === "success") setOpen(false);
+      if (next.status === "success") {
+        setOpen(false);
+        setConfirmMessage(null);
+      }
       return next;
     },
     { status: "idle" },
@@ -46,6 +52,7 @@ export function LinkPlantingSeason({
     if (!availableSeasons.length) {
       return <p className="mt-3 text-xs text-stone-500">Ainda não há safra em planejamento/aberta para vínculo.</p>;
     }
+
     return (
       <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>
         Vincular à safra
@@ -61,12 +68,14 @@ export function LinkPlantingSeason({
       aria-labelledby={`link-planting-${plantingId}`}
     >
       <form
+        ref={formRef}
         action={action}
         className="w-full max-w-xl space-y-4 rounded-2xl bg-white p-5 shadow-xl sm:p-7"
         onSubmit={(event) => {
-          if (!window.confirm("Confirma vincular esta lavoura à safra selecionada?")) {
-            event.preventDefault();
-          }
+          if (confirmMessage) return;
+          if (!event.currentTarget.reportValidity()) return;
+          event.preventDefault();
+          setConfirmMessage("Confirma vincular esta lavoura à safra selecionada?");
         }}
       >
         <div>
@@ -87,6 +96,8 @@ export function LinkPlantingSeason({
             className="mt-1 h-11 w-full rounded-xl border border-stone-300 bg-white px-3"
             defaultValue={state.values?.seasonId}
             required
+            onChange={() => setConfirmMessage(null)}
+            disabled={pending}
           >
             <option value="">Selecione a safra</option>
             {availableSeasons.map((season) => (
@@ -106,6 +117,8 @@ export function LinkPlantingSeason({
             className="mt-1 h-11 w-full rounded-xl border border-stone-300 bg-white px-3"
             defaultValue={state.values?.conductedAreaHa ?? String(plantingAreaHa)}
             required
+            onChange={() => setConfirmMessage(null)}
+            disabled={pending}
           />
         </label>
 
@@ -116,6 +129,8 @@ export function LinkPlantingSeason({
             className="mt-1 h-11 w-full rounded-xl border border-stone-300 bg-white px-3"
             defaultValue={initialStatus}
             required
+            onChange={() => setConfirmMessage(null)}
+            disabled={pending}
           >
             {PRODUCTIVE_STATUS_OPTIONS.map((status) => (
               <option key={status.value} value={status.value}>
@@ -134,6 +149,8 @@ export function LinkPlantingSeason({
             className="mt-1 h-11 w-full rounded-xl border border-stone-300 bg-white px-3"
             defaultValue={state.values?.productionGoalKg}
             placeholder="Opcional"
+            onChange={() => setConfirmMessage(null)}
+            disabled={pending}
           />
         </label>
 
@@ -146,6 +163,8 @@ export function LinkPlantingSeason({
             className="mt-1 h-11 w-full rounded-xl border border-stone-300 bg-white px-3"
             defaultValue={state.values?.productionEstimateKg}
             placeholder="Opcional"
+            onChange={() => setConfirmMessage(null)}
+            disabled={pending}
           />
         </label>
 
@@ -157,21 +176,47 @@ export function LinkPlantingSeason({
             defaultValue={state.values?.notes}
             rows={2}
             placeholder="Ex.: lavoura principal da fase inicial desta safra."
+            onChange={() => setConfirmMessage(null)}
+            disabled={pending}
           />
         </label>
 
-        {state.message && (
-          <p role="status" className={state.status === "error" ? "text-sm text-red-700" : "text-sm text-emerald-700"}>
-            {state.message}
-          </p>
-        )}
+        {state.message && <SystemAlert tone={state.status}>{state.message}</SystemAlert>}
 
-        <div className="flex flex-wrap gap-2">
-          <Button disabled={pending}>{pending ? "Vinculando..." : "Salvar vínculo"}</Button>
-          <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-            Cancelar
-          </Button>
-        </div>
+        {confirmMessage ? (
+          <div className="space-y-2 rounded-xl bg-stone-50 p-3">
+            <SystemAlert tone="warning">{confirmMessage}</SystemAlert>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setConfirmMessage(null)}
+                disabled={pending}
+              >
+                Revisar dados
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => {
+                  setConfirmMessage(null);
+                  formRef.current?.requestSubmit();
+                }}
+                disabled={pending}
+              >
+                Confirmar vínculo
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            <Button disabled={pending}>{pending ? "Vinculando..." : "Salvar vínculo"}</Button>
+            <Button type="button" variant="ghost" onClick={() => setOpen(false)} disabled={pending}>
+              Cancelar
+            </Button>
+          </div>
+        )}
       </form>
     </div>
   );

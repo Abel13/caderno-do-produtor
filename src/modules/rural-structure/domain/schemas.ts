@@ -33,7 +33,24 @@ export const seasonStatusSchema = z.object({
   reopenReason: z.preprocess((value) => (value === "" ? null : value), z.string().trim().max(500).nullable()),
 });
 
+export const plantingSeasonLinkSchema = z.object({
+  plantingId: z.string().uuid(),
+  seasonId: z.string().uuid(),
+  conductedAreaHa: z.preprocess((value) => Number(String(value).replace(",", ".")), z.number().positive()),
+  productiveStatus: z.enum(["forming", "productive", "renewing"]),
+  productionGoalKg: z.preprocess(
+    (value) => (value === "" || value === null || value === undefined ? null : Number(String(value).replace(",", "."))),
+    z.number().nonnegative().nullable()
+  ),
+  productionEstimateKg: z.preprocess(
+    (value) => (value === "" || value === null || value === undefined ? null : Number(String(value).replace(",", "."))),
+    z.number().nonnegative().nullable()
+  ),
+  notes: z.preprocess((value) => (value === "" ? null : value), z.string().trim().max(500).nullable()),
+});
+
 export type PlotInput = z.infer<typeof plotSchema>;
 export type PlantingInput = z.infer<typeof plantingSchema>;
 export type SeasonInput = z.infer<typeof seasonSchema>;
 export type SeasonStatusInput = z.infer<typeof seasonStatusSchema>;
+export type PlantingSeasonLinkInput = z.infer<typeof plantingSeasonLinkSchema>;

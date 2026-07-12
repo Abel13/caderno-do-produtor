@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { SystemAlert } from "@/components/atoms/system-alert";
 import { updateSeasonStatusAction, type StructureActionState } from "../actions";
 
 function statusLabel(status: string) {
@@ -32,6 +33,9 @@ const seasonTransitions: Record<SeasonStatus, { value: SeasonStatus; label: stri
   closed: [{ value: "open", label: "Reabrir safra (aberta novamente)" }],
 };
 
+const REOPEN_WARNING = "Confirmar reabertura da safra com justificativa obrigatória.";
+const CLOSE_WARNING = "Esta ação irá fechar o ciclo de registro desta safra.";
+
 export function EditSeasonStatus({
   seasonId,
   currentStatus,
@@ -42,9 +46,16 @@ export function EditSeasonStatus({
   canReopen: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const [blockedMessage, setBlockedMessage] = useState<string | null>(null);
+  const [confirmMessage, setConfirmMessage] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const [state, action, pending] = useActionState(async (previous: StructureActionState, formData: FormData) => {
     const next = await updateSeasonStatusAction(previous, formData);
-    if (next.status === "success") setOpen(false);
+    if (next.status === "success") {
+      setOpen(false);
+      setBlockedMessage(null);
+      setConfirmMessage(null);
+    }
     return next;
   }, { status: "idle" });
 
@@ -63,8 +74,17 @@ export function EditSeasonStatus({
     if (!hasOptions) {
       return <p className="mt-3 text-xs text-stone-600">Sem transição disponível para este status.</p>;
     }
+
     return (
-      <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>
+      <Button
+        size="sm"
+        variant="ghost"
+        onClick={() => {
+          setOpen(true);
+          setBlockedMessage(null);
+          setConfirmMessage(null);
+        }}
+      >
         Alterar situação
       </Button>
     );
@@ -73,34 +93,41 @@ export function EditSeasonStatus({
   return (
     <div className="mt-3 rounded-xl border border-stone-200 bg-stone-50 p-4">
       <form
+        ref={formRef}
         action={action}
         className="space-y-3"
         onSubmit={(event) => {
           if (blockedReopen) {
             event.preventDefault();
-            window.alert("A safra encerrada só pode ser reaberta pelo proprietário.");
+            setBlockedMessage("A safra encerrada só pode ser reaberta pelo proprietário.");
             return;
           }
 
+          if (confirmMessage) return;
+
           const submitted = new FormData(event.currentTarget);
           const nextStatus = String(submitted.get("status") ?? "");
-          if (nextStatus === "closed" && !window.confirm("Confirma encerrar esta safra?")) {
+          if (nextStatus === "closed") {
             event.preventDefault();
+            setConfirmMessage(CLOSE_WARNING);
             return;
           }
-          if (nextStatus === "open" && currentStatus === "closed" && !window.confirm("Confirma reabrir esta safra?")) {
+          if (nextStatus === "open" && currentStatus === "closed") {
             event.preventDefault();
+            setConfirmMessage(REOPEN_WARNING);
             return;
           }
         }}
       >
         <input type="hidden" name="seasonId" value={seasonId} />
         <input type="hidden" name="seasonCurrentStatus" value={currentStatus} />
+
         <label className="block text-sm font-semibold">
           Situação atual
           <div className="mt-1 text-sm text-stone-600">{statusLabel(currentStatus)}</div>
           <p className="text-xs text-stone-500">{statusDescription(currentStatus)}</p>
         </label>
+
         <label className="block text-sm font-semibold">
           Nova situação
           <select
@@ -108,6 +135,10 @@ export function EditSeasonStatus({
             className="mt-1 h-12 w-full rounded-xl border border-stone-300 bg-white px-3"
             defaultValue={state.values?.status ?? ""}
             required
+            onChange={() => {
+              setBlockedMessage(null);
+              setConfirmMessage(null);
+            }}
           >
             {options.length ? (
               <>
@@ -123,6 +154,7 @@ export function EditSeasonStatus({
             )}
           </select>
         </label>
+
         {showReason && (
           <label className="block text-sm font-semibold">
             Justificativa para reabertura
@@ -137,22 +169,50 @@ export function EditSeasonStatus({
             />
           </label>
         )}
+
         <p className="text-xs text-stone-500">
           {canReopen
             ? "Ao reabrir, informe a justificativa e, se necessário, ajuste o novo período na tela de cadastro."
             : "Somente proprietário pode reabrir safra encerrada."}
         </p>
-        {state.message && (
-          <p role="status" className={state.status === "error" ? "text-sm text-red-700" : "text-sm text-emerald-700"}>
-            {state.message}
-          </p>
+
+        {blockedMessage && <SystemAlert tone="error">{blockedMessage}</SystemAlert>}
+        {state.message && <SystemAlert tone={state.status}>{state.message}</SystemAlert>}
+
+        {confirmMessage ? (
+          <div className="space-y-2 rounded-xl bg-stone-100 p-2">
+            <SystemAlert tone="warning">{confirmMessage}</SystemAlert>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setConfirmMessage(null)}
+                disabled={pending}
+              >
+                Revisar situação
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                disabled={pending}
+                onClick={() => {
+                  setConfirmMessage(null);
+                  formRef.current?.requestSubmit();
+                }}
+              >
+                Confirmar mudança
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            <Button disabled={pending || options.length === 0}>{pending ? "Salvando..." : "Salvar situação"}</Button>
+            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
+          </div>
         )}
-        <div className="flex flex-wrap gap-2">
-          <Button disabled={pending || options.length === 0}>{pending ? "Salvando..." : "Salvar situação"}</Button>
-          <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-            Cancelar
-          </Button>
-        </div>
       </form>
     </div>
   );

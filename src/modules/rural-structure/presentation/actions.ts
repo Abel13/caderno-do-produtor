@@ -5,7 +5,13 @@ import { ZodError } from "zod";
 
 import { createClient } from "@/lib/supabase/server";
 
-import { plantingSchema, plotSchema, seasonSchema, seasonStatusSchema } from "../domain/schemas";
+import {
+  plantingSchema,
+  plotSchema,
+  plantingSeasonLinkSchema,
+  seasonSchema,
+  seasonStatusSchema,
+} from "../domain/schemas";
 import { RuralStructureRepository } from "../infrastructure/supabase/rural-structure-repository";
 
 export interface StructureActionState {
@@ -64,6 +70,26 @@ function failure(error: unknown, formData: FormData): StructureActionState {
 
     if (error.message.includes("harvest_seasons_check")) {
       return { status: "error", message: "A data de término precisa ser posterior à data de início.", values };
+    }
+
+    if (error.message.includes("season_closed")) {
+      return { status: "error", message: "Não dá para vincular a safra: ela está encerrada.", values };
+    }
+
+    if (error.message.includes("conducted_area_exceeds_planting")) {
+      return {
+        status: "error",
+        message: "A área vinculada não pode ser maior que a área da lavoura ativa.",
+        values,
+      };
+    }
+
+    if (error.message.includes("planting_seasons_planting_id_season_id_key") || error.message.includes("duplicate")) {
+      return {
+        status: "error",
+        message: "Esta lavoura já está vinculada a esta safra.",
+        values,
+      };
     }
 
     if (error.message.includes("season_reopen_requires_owner")) {
@@ -241,6 +267,42 @@ export async function updatePlantingPhaseAction(_: StructureActionState, formDat
     revalidatePath("/structure/plantings");
     revalidatePath("/structure");
     return { status: "success", message: "Fase da lavoura atualizada." };
+  } catch (error) {
+    return failure(error, formData);
+  }
+}
+
+export async function linkPlantingSeasonAction(_: StructureActionState, formData: FormData): Promise<StructureActionState> {
+  try {
+    const input = plantingSeasonLinkSchema.parse({
+      plantingId: formData.get("plantingId"),
+      seasonId: formData.get("seasonId"),
+      conductedAreaHa: formData.get("conductedAreaHa"),
+      productiveStatus: formData.get("productiveStatus"),
+      productionGoalKg: formData.get("productionGoalKg"),
+      productionEstimateKg: formData.get("productionEstimateKg"),
+      notes: formData.get("notes"),
+    });
+
+    if (input.productionGoalKg !== null && !Number.isFinite(input.productionGoalKg)) {
+      return { status: "error", message: "Meta (kg) inválida." };
+    }
+    if (input.productionEstimateKg !== null && !Number.isFinite(input.productionEstimateKg)) {
+      return { status: "error", message: "Estimativa (kg) inválida." };
+    }
+
+    await (await repository()).linkPlantingSeason(
+      input.plantingId,
+      input.seasonId,
+      input.conductedAreaHa,
+      input.productiveStatus,
+      input.productionGoalKg,
+      input.productionEstimateKg,
+      input.notes
+    );
+    revalidatePath("/structure/plantings");
+    revalidatePath("/structure");
+    return { status: "success", message: "Lavoura vinculada à safra." };
   } catch (error) {
     return failure(error, formData);
   }

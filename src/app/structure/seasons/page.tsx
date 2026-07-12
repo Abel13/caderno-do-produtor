@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { SystemAlert } from "@/components/atoms/system-alert";
 import { ArrowRight } from "@/components/icons";
 import { createClient } from "@/lib/supabase/server";
 import { chooseActiveProperty } from "@/modules/identity/domain/permissions";
@@ -35,7 +36,7 @@ export default async function SeasonsPage() {
     <main className="min-h-screen bg-[#f7f6f1] px-4 py-8">
       <div className="mx-auto max-w-4xl">
         <Link href="/structure" className="inline-flex min-h-11 items-center gap-2 text-emerald-800">
-          <ArrowRight className="size-4 rotate-180" />
+          <ArrowRight className="size-4 rotate-180" aria-hidden="true" />
           Visão geral
         </Link>
         <h1 className="mt-5 text-3xl font-bold">Safras de {property.name}</h1>
@@ -59,14 +60,15 @@ export default async function SeasonsPage() {
                       <p className="text-xs text-stone-600">{seasonStatusDescription(season.status)}</p>
                     </div>
                   </div>
+
                   {canWrite ? (
                     <div className="mt-3">
                       <EditSeasonStatus seasonId={season.id} currentStatus={season.status} canReopen={canReopen} />
                     </div>
                   ) : (
-                    <p className="mt-3 text-sm text-amber-800">
+                    <SystemAlert tone="warning" className="mt-3">
                       Acesso para consulta. Apenas proprietário e gestor podem alterar situação de safra.
-                    </p>
+                    </SystemAlert>
                   )}
                 </article>
               ))}
@@ -77,11 +79,17 @@ export default async function SeasonsPage() {
         </section>
 
         {canWrite ? (
-          <StructureForms propertyId={property.id} plots={data.plots} cultivars={data.cultivars} hasSeason={data.seasons.length > 0} initialStep="season" />
+          <StructureForms
+            propertyId={property.id}
+            plots={data.plots}
+            cultivars={data.cultivars}
+            hasSeason={data.seasons.length > 0}
+            initialStep="season"
+          />
         ) : (
-          <p className="mt-6 rounded-xl bg-amber-50 p-4 text-amber-900">
+          <SystemAlert tone="warning" className="mt-6">
             Acesso para consulta. Você não pode cadastrar ou alterar safras.
-          </p>
+          </SystemAlert>
         )}
       </div>
     </main>
