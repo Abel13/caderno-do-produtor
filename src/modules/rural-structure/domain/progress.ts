@@ -1,0 +1,2 @@
+export interface StructureCounts { plots:number; plantings:number; seasons:number; links:number }
+export function structureChecklist(counts:StructureCounts){return [{key:"property",done:true,label:"Propriedade confirmada"},{key:"plot",done:counts.plots>0,label:"Cadastrar talhão"},{key:"planting",done:counts.plantings>0,label:"Cadastrar lavoura"},{key:"season",done:counts.seasons>0,label:"Criar safra"},{key:"link",done:counts.links>0,label:"Vincular lavoura à safra"}];}
