@@ -102,14 +102,14 @@ Modelar a estrutura que contextualiza todos os controles do caderno.
 - Cadastro de propriedades.
 - Cadastro mínimo e complementar de talhões.
 - Histórico de área, situação e limites do talhão.
-- Divisão e união de talhões com rastreabilidade.
-- Catálogo de culturas e cultivares.
+- Encerramento lógico de talhões; divisão e união formais ficam fora desta etapa.
+- Cafeicultura como cultura fixa do produto; cultivar permanece opcional.
 - Cadastro de lavouras ou plantios separado do talhão.
 - Espaçamento, população, sistema de cultivo e origem das mudas.
 - Cadastro e encerramento de safras.
 - Vínculo entre lavoura e safra.
 - Seletores globais de conta, propriedade e safra.
-- Importação simples de talhões por planilha, se necessária.
+- Cadastro manual; mapas, coordenadas e importação por planilha ficam fora desta etapa.
 - Página de visão geral da propriedade e do talhão.
 
 ### Dependências
@@ -130,16 +130,16 @@ Criar os recursos comuns que serão reutilizados pelos 21 controles.
 
 - Cabeçalho comum dos registros: contexto, data, situação, origem e responsável.
 - Estados de rascunho, confirmado, cancelado e importado para revisão.
-- Anexos com Supabase Storage e políticas de acesso.
-- Fotografias, PDFs, laudos, notas e comprovantes.
+- Contrato de anexos com Supabase Storage e políticas de acesso.
+- Fotografias, PDFs, laudos, notas e comprovantes como continuação da própria etapa quando a UX de upload for priorizada.
 - Observações e comentários.
 - Histórico de alterações e trilha de auditoria.
 - Exclusão lógica e restauração autorizada.
-- Busca global e filtros compartilhados.
-- Paginação, ordenação e exportação básica.
+- Filtros compartilhados por propriedade, safra, talhão, tipo, situação e período.
+- Paginação e ordenação; busca global e exportação básica seguem como continuação.
 - Catálogo de atividades e operações.
 - Cadastro de fornecedores, compradores, laboratórios e prestadores.
-- Sistema de lembretes e notificações internas.
+- Sistema de lembretes e notificações internas como continuação da etapa.
 - Padrão de formulários com salvamento seguro e prevenção de perda de dados.
 
 ### Dependências

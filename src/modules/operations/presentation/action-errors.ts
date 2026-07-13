@@ -33,7 +33,7 @@ export function operationErrorState(error: unknown): OperationsActionState {
 
   if (error instanceof Error) {
     const code = Object.keys(errorMessages).find((candidate) => error.message.includes(candidate));
-    if (code) return { status: "error", message: errorMessages[code], values: {} };
+    if (code) return { status: "error", message: errorMessages[code] };
     const fieldErrors = fieldErrorsFromSupabaseMessage(error);
     if (fieldErrors) return { status: "error", message: "Atenção, não foi possível concluir este registro.", fieldErrors };
   }

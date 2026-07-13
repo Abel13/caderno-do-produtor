@@ -1,5 +1,5 @@
 export type OperationalRecordStatus = "draft" | "confirmed" | "cancelled" | "review_required";
-export type OperationalRecordOrigin = "manual" | "pdf" | "integration" | "system";
+export type OperationalRecordOrigin = "manual" | "pdf" | "import" | "integration" | "system";
 
 export interface OperationalRecordType {
   code: string;

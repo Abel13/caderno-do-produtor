@@ -11,6 +11,26 @@ import type { OperationsActionState } from "@/modules/operations/presentation/ac
 import type { OperationFormContext, OperationalRecordSummary, PlotOption, SeasonOption, PlantingOption } from "@/modules/operations/domain/types";
 
 type Lookup = Record<string, string>;
+type FieldErrors = NonNullable<OperationsActionState["fieldErrors"]>;
+
+const fieldLabels: Record<string, string> = {
+  propertyId: "Propriedade",
+  recordId: "Registro",
+  recordType: "Tipo",
+  occurredAt: "Data e hora",
+  plotId: "Talhão",
+  plantingId: "Lavoura",
+  seasonId: "Safra",
+  status: "Situação",
+  payload: "Medida",
+  payloadValue: "Valor da medida",
+  payloadUnit: "Unidade",
+  payloadComment: "Observação da medida",
+  notes: "Notas",
+  origin: "Origem",
+  responsibleUserId: "Responsável",
+  clientId: "Identificador de envio",
+};
 
 interface OperationsPageClientProps {
   canManage: boolean;
@@ -56,18 +76,47 @@ export function OperationsPageClient({
     () => Object.fromEntries(seasons.map((season) => [season.id, `${season.name} (${season.status})`])) as Lookup,
     [seasons],
   );
+  const plantingById = useMemo(
+    () => Object.fromEntries(plantings.map((planting) => [planting.id, planting.name])) as Lookup,
+    [plantings],
+  );
+  const typeByCode = useMemo(
+    () => Object.fromEntries(recordTypes.map((recordType) => [recordType.code, recordType])) as Record<string, OperationFormContext["recordTypes"][number]>,
+    [recordTypes],
+  );
 
   const statusLabel = (status: OperationalRecordSummary["status"]) =>
     status === "draft" ? "Rascunho" : status === "confirmed" ? "Confirmado" : status === "cancelled" ? "Cancelado" : "Em revisão";
+  const statusDescription = (status: OperationalRecordSummary["status"]) =>
+    status === "draft"
+      ? "Ainda pode ser conferido antes de entrar como registro definitivo."
+      : status === "confirmed"
+        ? "Registro válido para compor o histórico da propriedade."
+        : status === "cancelled"
+          ? "Registro cancelado, mantido apenas para rastreabilidade."
+          : "Registro vindo de revisão ou importação, aguardando conferência.";
+  const statusClass = (status: OperationalRecordSummary["status"]) =>
+    status === "confirmed"
+      ? "bg-emerald-100 text-emerald-900"
+      : status === "cancelled"
+        ? "bg-red-100 text-red-900"
+        : status === "review_required"
+          ? "bg-amber-100 text-amber-900"
+          : "bg-stone-100 text-stone-800";
 
   const payloadText = (record: OperationalRecordSummary) => {
     const payload = record.payload as Record<string, unknown> | null;
     const value = payload?.value;
-    const unit = payload?.value_unit ?? "";
+    const defaultUnit = typeByCode[record.record_type]?.default_unit ?? "";
+    const unit = payload?.value_unit ?? defaultUnit;
     if (typeof value === "number") {
       return `${value} ${String(unit || "").trim()}`.trim();
     }
-    return "Sem medida registrada";
+    return defaultUnit ? `Sem valor informado (${defaultUnit})` : "Sem medida registrada";
+  };
+  const payloadComment = (record: OperationalRecordSummary) => {
+    const payload = record.payload as Record<string, unknown> | null;
+    return typeof payload?.comment === "string" && payload.comment.trim() ? payload.comment : null;
   };
 
   return (
@@ -164,7 +213,7 @@ export function OperationsPageClient({
 
       {!canManage && (
         <SystemAlert tone="warning" className="mt-4">
-          <strong>Consulta:</strong> técnico ou usuário sem permissão de edição. Você pode visualizar, não consegue salvar ou excluir.
+          <strong>Acesso para consulta:</strong> seu papel atual permite visualizar os registros desta propriedade, mas não criar, editar, apagar ou restaurar operações.
         </SystemAlert>
       )}
 
@@ -179,23 +228,29 @@ export function OperationsPageClient({
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
                   <p className="font-bold">
-                    {recordTypes.find((type) => type.code === record.record_type)?.label ?? record.record_type}
+                    {typeByCode[record.record_type]?.label ?? record.record_type}
                   </p>
                   <p className="text-sm text-stone-600">
                     {new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(record.occurred_at))}
                   </p>
                 </div>
-                <div className="rounded-full bg-stone-100 px-3 py-1 text-xs font-semibold">{statusLabel(record.status)}</div>
+                <div className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClass(record.status)}`}>{statusLabel(record.status)}</div>
               </div>
-              <p className="mt-2 text-sm text-stone-700">
-                {record.plot_id ? `Talhão: ${plotById[record.plot_id] ?? "não informado"}` : "Talhão não informado"}
-              </p>
-              <p className="text-sm text-stone-700">
-                {record.season_id ? `Safra: ${seasonById[record.season_id] ?? "não informada"}` : "Safra não informada"}
-              </p>
-              <p className="text-sm text-stone-700">
-                Medida: <span className="font-semibold">{payloadText(record)}</span>
-              </p>
+              <p className="mt-2 text-sm text-stone-600">{statusDescription(record.status)}</p>
+
+              <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-4">
+                <ContextItem label="Talhão" value={record.plot_id ? plotById[record.plot_id] ?? "Não encontrado" : "Não informado"} />
+                <ContextItem label="Lavoura" value={record.planting_id ? plantingById[record.planting_id] ?? "Não encontrada" : "Não informada"} />
+                <ContextItem label="Safra" value={record.season_id ? seasonById[record.season_id] ?? "Não informada" : "Não informada"} />
+                <ContextItem label="Medida" value={payloadText(record)} strong />
+              </dl>
+
+              {(payloadComment(record) || record.notes) && (
+                <div className="mt-3 rounded-xl bg-stone-50 p-3 text-sm text-stone-700">
+                  {payloadComment(record) && <p><span className="font-semibold">Medição:</span> {payloadComment(record)}</p>}
+                  {record.notes && <p><span className="font-semibold">Notas:</span> {record.notes}</p>}
+                </div>
+              )}
 
               <div className="mt-3 flex flex-wrap gap-2">
                 {canManage && !record.deleted_at && <EditRecordButton onEdit={() => setEditingRecord(record)} />}
@@ -231,19 +286,40 @@ export function OperationsPageClient({
   );
 }
 
+function ContextItem({ label, value, strong = false }: { label: string; value: string; strong?: boolean }) {
+  return (
+    <div className="rounded-xl border border-stone-200 bg-stone-50 px-3 py-2">
+      <dt className="text-xs font-semibold uppercase tracking-wide text-stone-500">{label}</dt>
+      <dd className={strong ? "font-semibold text-stone-900" : "text-stone-800"}>{value}</dd>
+    </div>
+  );
+}
+
 function EditRecordButton({ onEdit }: { onEdit: () => void }) {
   return <Button onClick={onEdit} variant="ghost" size="sm"><Edit2 className="size-4" aria-hidden="true"/>Editar</Button>;
 }
 
 function DeleteRecordButton({ recordId }: { recordId: string }) {
   const [state, action, pending] = useActionState(deleteOperationAction, initialOperationActionState);
+  const [confirming, setConfirming] = useState(false);
   if (state.status === "success") return null;
+  if (!confirming) {
+    return (
+      <Button size="sm" variant="ghost" type="button" onClick={() => setConfirming(true)}>
+        <Trash2 className="size-4" aria-hidden="true" />
+        Apagar
+      </Button>
+    );
+  }
   return (
-    <form action={action} className="inline">
+    <form action={action} className="inline-flex flex-wrap items-center gap-2">
       <input type="hidden" name="recordId" value={recordId} />
       <Button size="sm" variant="ghost" type="submit" disabled={pending}>
         <Trash2 className="size-4" aria-hidden="true" />
-        {pending ? "Apagando..." : "Apagar"}
+        {pending ? "Apagando..." : "Confirmar exclusão"}
+      </Button>
+      <Button size="sm" variant="ghost" type="button" onClick={() => setConfirming(false)} disabled={pending}>
+        Cancelar
       </Button>
       {state.message && <SystemAlert tone={state.status}>{state.message}</SystemAlert>}
     </form>
@@ -279,6 +355,7 @@ function OperationFormModal({
   onClose: () => void;
   onSuccess: () => void;
 }) {
+  const initialPayload = (initialRecord?.payload ?? {}) as Record<string, unknown>;
   const createState = useActionState(async (previous: OperationsActionState, formData: FormData) => {
     const result = type === "create" ? await createOperationAction(previous, formData) : await updateOperationAction(previous, formData);
     if (result.status === "success") onSuccess();
@@ -289,7 +366,7 @@ function OperationFormModal({
   const [clientId] = useState(() => crypto.randomUUID());
 
   const values = state.values ?? {};
-  const recordType = values.recordType ?? (initialRecord ? initialRecord.record_type : context.recordTypes[0]?.code);
+  const [recordType, setRecordType] = useState(values.recordType ?? (initialRecord ? initialRecord.record_type : context.recordTypes[0]?.code));
   const selectedType = context.recordTypes.find((item) => item.code === recordType) ?? context.recordTypes[0];
 
   const availablePlantings = context.plantings;
@@ -318,7 +395,13 @@ function OperationFormModal({
 
           <label className="block text-sm font-semibold">
             Tipo
-            <select name="recordType" defaultValue={recordType} className="mt-1 h-11 w-full rounded-xl border border-stone-300" required>
+            <select
+              name="recordType"
+              value={recordType ?? ""}
+              onChange={(event) => setRecordType(event.target.value)}
+              className="mt-1 h-11 w-full rounded-xl border border-stone-300"
+              required
+            >
               {context.recordTypes.map((recordTypeOption) => (
                 <option key={recordTypeOption.code} value={recordTypeOption.code}>
                   {recordTypeOption.label}
@@ -396,7 +479,7 @@ function OperationFormModal({
                 type="number"
                 step="0.001"
                 className="mt-1 h-11 w-full rounded-xl border border-stone-300 px-3"
-                defaultValue={String(values.payloadValue ?? "")}
+                defaultValue={String(values.payloadValue ?? initialPayload.value ?? "")}
                 placeholder={`Ex.: 15 ${selectedType?.default_unit ?? ""}`.trim()}
               />
             </label>
@@ -405,16 +488,17 @@ function OperationFormModal({
               <input
                 name="payloadUnit"
                 className="mt-1 h-11 w-full rounded-xl border border-stone-300 px-3"
-                defaultValue={values.payloadUnit ?? selectedType?.default_unit ?? ""}
-                placeholder="Ex.: mm, kg, un"
+                defaultValue={values.payloadUnit ?? initialPayload.value_unit ?? selectedType?.default_unit ?? ""}
+                placeholder={selectedType?.default_unit ? `Padrão: ${selectedType.default_unit}` : "Ex.: mm, kg, un"}
               />
+              {selectedType?.default_unit && <span className="mt-1 block text-xs font-normal text-stone-500">Padrão deste tipo: {selectedType.default_unit}</span>}
             </label>
             <label className="block text-sm font-semibold">
               Observação no payload
               <input
                 name="payloadComment"
                 className="mt-1 h-11 w-full rounded-xl border border-stone-300 px-3"
-                defaultValue={values.payloadComment ?? ""}
+                defaultValue={values.payloadComment ?? initialPayload.comment ?? ""}
                 placeholder="Informação complementar da medição"
               />
             </label>
@@ -431,25 +515,10 @@ function OperationFormModal({
             />
           </label>
 
-          <label className="block text-sm font-semibold">
-            Responsável (opcional)
-            <input
-              name="responsibleUserId"
-              type="text"
-              className="mt-1 h-11 w-full rounded-xl border border-stone-300 px-3"
-              defaultValue={values.responsibleUserId ?? ""}
-              placeholder="UUID do técnico responsável, se necessário"
-            />
-          </label>
+          <input name="responsibleUserId" type="hidden" value={values.responsibleUserId ?? ""} />
 
           {state.message && <SystemAlert tone={state.status}>{state.message}</SystemAlert>}
-          {state.fieldErrors && (
-            <div className="space-y-1 text-sm text-red-700">
-              {Object.entries(state.fieldErrors).map(([field, items]) => (
-                <p key={field}>{`${field}: ${items?.join(", ")}`}</p>
-              ))}
-            </div>
-          )}
+          {state.fieldErrors && <FieldErrorList errors={state.fieldErrors} />}
 
           <div className="flex flex-wrap gap-2 pt-1">
             <Button type="submit" disabled={pending}>
@@ -465,6 +534,23 @@ function OperationFormModal({
           </p>
         </form>
       </div>
+    </div>
+  );
+}
+
+function FieldErrorList({ errors }: { errors: FieldErrors }) {
+  const items = Object.entries(errors)
+    .flatMap(([field, messages]) => (messages ?? []).map((message) => ({ field, message })))
+    .filter((item) => item.message);
+  if (items.length === 0) return null;
+
+  return (
+    <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+      {items.map((item) => (
+        <p key={`${item.field}-${item.message}`}>
+          <span className="font-semibold">{fieldLabels[item.field] ?? item.field}:</span> {item.message}
+        </p>
+      ))}
     </div>
   );
 }

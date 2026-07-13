@@ -24,7 +24,7 @@ export const operationCreateSchema = z
     notes: z.preprocess((value) => (value === "" || value == null ? null : String(value)), z.string().trim().max(500).nullable()),
     origin: z
       .preprocess((value) => (value === "" || value == null ? "manual" : value), z.string())
-      .pipe(z.enum(["manual", "pdf", "integration", "system"])),
+      .pipe(z.enum(["manual", "pdf", "import", "integration", "system"])),
     responsibleUserId: z
       .preprocess((value) => (value === "" || value == null ? null : String(value)), z.string().uuid().nullable())
       .optional(),
@@ -48,7 +48,9 @@ export const operationUpdateSchema = z.object({
   recordType: z.string().trim().min(1, "Informe o tipo de registro.").optional(),
   occurredAt: z
     .preprocess((value) => (value === "" || value == null ? null : new Date(String(value))), z.date({ message: "Informe a data do registro." }).nullable())
-    .transform((value) => value ?? new Date()),
+    .refine((value) => value !== null, "Informe a data do registro.")
+    .transform((value) => value as Date)
+    .refine((value) => value <= new Date(Date.now() + 24 * 60 * 60 * 1000), "Data inválida: não pode ser futura."),
   plotId: z.preprocess((value) => (value === "" || value == null ? null : String(value)), z.string().uuid().nullable()),
   plantingId: z.preprocess((value) => (value === "" || value == null ? null : String(value)), z.string().uuid().nullable()),
   seasonId: z.preprocess((value) => (value === "" || value == null ? null : String(value)), z.string().uuid().nullable()),
