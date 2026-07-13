@@ -6,6 +6,8 @@ O produto será implementado de forma incremental, mas não terá um MVP. Cada m
 
 Uma entrega incremental não significa uma entrega descartável. As primeiras etapas formam a base definitiva do produto e os módulos seguintes ampliam a solução sem substituir sua arquitetura central.
 
+O eixo principal do produto é digitalizar o Caderno do Produtor. A ordem de implementação pode agrupar fichas relacionadas por contexto, mas cada funcionalidade exposta ao produtor deve corresponder a uma ficha real do caderno ou apoiar diretamente seu preenchimento, consulta, correção, comprovação ou exportação.
+
 ## 2. Princípios de execução
 
 - Implementar módulos completos, respeitando suas dependências.
@@ -16,6 +18,8 @@ Uma entrega incremental não significa uma entrega descartável. As primeiras et
 - Tratar importações como dados em revisão até a confirmação do usuário.
 - Preservar histórico e rastreabilidade desde o início.
 - Entregar os 21 controles como partes conectadas de uma única plataforma.
+- Manter registros operacionais como backbone técnico interno, sem substituir a experiência principal de preenchimento das fichas.
+- Evitar agenda, recomendação automática, BI ou automação quando a ficha correspondente ainda não exigir esse comportamento.
 
 ## 3. Visão das etapas
 
@@ -24,8 +28,8 @@ Uma entrega incremental não significa uma entrega descartável. As primeiras et
 | 0 | Fundação técnica | Base de desenvolvimento, qualidade, segurança e entrega contínua. |
 | 1 | Identidade e organizações | Usuários, contas, vínculos, papéis e permissões. |
 | 2 | Estrutura rural | Propriedades, talhões, lavouras, culturas e safras. |
-| 3 | Plataforma operacional | Registros, anexos, histórico, busca, atividades e notificações. |
-| 4 | Dashboard e navegação | Visão rápida, contexto selecionado e preenchimento sob demanda. |
+| 3 | Plataforma operacional | Backbone interno para fichas, anexos, histórico, busca, atividades e notificações. |
+| 4 | Dashboard e navegação | Orientação para preencher fichas, contexto selecionado e preenchimento sob demanda. |
 | 5 | Clima e água | Pluviometria e irrigação. |
 | 6 | Solo e nutrição | Análises, correção e adubações. |
 | 7 | Fitossanidade | Monitoramento e manejo de pragas, doenças e plantas daninhas. |
@@ -124,7 +128,7 @@ Modelar a estrutura que contextualiza todos os controles do caderno.
 
 ### Objetivo
 
-Criar os recursos comuns que serão reutilizados pelos 21 controles.
+Criar os recursos comuns que serão reutilizados pelas fichas digitais do caderno.
 
 ### Entregáveis
 
@@ -137,7 +141,7 @@ Criar os recursos comuns que serão reutilizados pelos 21 controles.
 - Exclusão lógica e restauração autorizada.
 - Filtros compartilhados por propriedade, safra, talhão, tipo, situação e período.
 - Paginação e ordenação; busca global e exportação básica seguem como continuação.
-- Catálogo de atividades e operações.
+- Catálogo de tipos de ficha e operações internas.
 - Cadastro de fornecedores, compradores, laboratórios e prestadores.
 - Sistema de lembretes e notificações internas como continuação da etapa.
 - Padrão de formulários com salvamento seguro e prevenção de perda de dados.
@@ -148,7 +152,7 @@ Criar os recursos comuns que serão reutilizados pelos 21 controles.
 
 ### Critério de conclusão
 
-Novos controles podem ser adicionados reutilizando contexto, anexos, auditoria, busca e comportamento de formulários.
+Novas fichas do caderno podem ser adicionadas reutilizando contexto, anexos, auditoria, busca e comportamento de formulários, sem expor complexidade operacional genérica ao produtor.
 
 ## 8. Etapa 4 — Dashboard e preenchimento sob demanda
 
@@ -166,7 +170,7 @@ Entregar a experiência central de navegação da solução.
 - Cards condicionais que aparecem quando há dados.
 - Estados vazios com orientação para iniciar um controle.
 - Botão global “Novo registro”.
-- Atalhos por intenção: chuva, irrigação, aplicação, observação e monitoramento.
+- Atalhos por ficha ou intenção reconhecida no caderno: chuva, irrigação, aplicação, observação e monitoramento.
 - Atalhos configuráveis como evolução posterior.
 - Preenchimento iniciado a partir da propriedade, talhão, alerta ou recomendação.
 - Layout móvel, tablet e desktop.
@@ -194,9 +198,10 @@ O usuário encontra informações essenciais na página inicial e inicia os pree
 - Subetapa 5A: controle pluviométrico simples por data, local e volume em milímetros.
 - Subetapa 5A: controle climático diário com chuva, temperatura, umidade e ocorrências prejudiciais.
 - Subetapa 5A: acumulados do mês e da safra ativa.
-- Subetapa 5B: planejamento e realização de irrigação.
-- Subetapa 5B: sistema, fonte, duração, vazão, lâmina e consumo.
-- Subetapa 5B: relação entre chuva e irrigação.
+- Subetapa 5B: ficha de Controle da Irrigação, sem planejamento ou agenda.
+- Subetapa 5B: informações do sistema de irrigação usado na área.
+- Subetapa 5B: linhas realizadas com talhão, data, horário, tempo total, lâmina, frequência, volume, responsável e observações.
+- Subetapa 5B: relação simples entre chuva e irrigação preenchidas.
 - Gráficos e alertas no dashboard como evolução após os registros básicos.
 - Exportação das tabelas correspondentes ao caderno.
 

@@ -53,7 +53,7 @@ export function DashboardShell({ context, dashboard }: { context: IdentityContex
           </div>
           <nav className="space-y-1 text-sm font-medium">
             <Nav href="/dashboard" Icon={Home}>Visão geral</Nav>
-            <Nav href="/operations" Icon={Clipboard}>Operações</Nav>
+            <Nav href="/operations" Icon={Clipboard}>Histórico interno</Nav>
             <Nav href="/structure" Icon={Coffee}>Estrutura rural</Nav>
             <Nav href="/climate" Icon={CloudRain}>Clima e água</Nav>
             <Nav href="#" Icon={FileText}>Documentos</Nav>

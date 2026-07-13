@@ -129,6 +129,7 @@ O sistema deve planejar e registrar eventos de irrigação.
 - Dados: área, data, sistema de irrigação, duração, lâmina aplicada, vazão, fonte de água, consumo de energia e responsável.
 - Regras: calcular volume quando houver dados suficientes; impedir duração ou lâmina negativa.
 - Saídas: água aplicada por área e período, custo estimado e comparação com precipitação.
+- Decisão de implementação inicial: tratar como ficha de irrigação realizada, sem agenda, solicitação ou recomendação automática.
 
 ### RF-14 — Controle da colheita
 

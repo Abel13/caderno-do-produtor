@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(13);
+select plan(23);
 
 insert into auth.users(
   id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, raw_app_meta_data, created_at, updated_at
@@ -100,6 +100,107 @@ select lives_ok(
 select ok(
   (select op.deleted_at is not null from public.climate_readings cr join public.operational_records op on op.id=cr.operational_record_id where cr.control_type='rainfall' limit 1),
   'exclusão climática é lógica via operational_records'
+);
+
+select lives_ok(
+  $$select public.create_irrigation_system(
+    (select id from public.properties where name='Fazenda Clima' limit 1),
+    (select id from public.plots where name='Talhão Chuva' limit 1),
+    'Gotejamento Talhão Chuva',
+    'Gotejamento',
+    'Poço',
+    '1 un./planta',
+    92,
+    1,
+    2,
+    '12 cv trifásico',
+    'Centrífuga baixa pressão',
+    5,
+    '3,0 x 0,7',
+    'sistema da ficha'
+  )$$,
+  'owner cadastra sistema de irrigação da área'
+);
+
+select lives_ok(
+  $$select public.create_irrigation_event(
+    (select id from public.properties where name='Fazenda Clima' limit 1),
+    (select id from public.irrigation_systems where name='Gotejamento Talhão Chuva' limit 1),
+    (select id from public.plots where name='Talhão Chuva' limit 1),
+    (select id from public.harvest_seasons where name='Safra Chuva' limit 1),
+    '2026-02-14'::date,
+    '19:00'::time,
+    '22:00'::time,
+    null::integer,
+    7,
+    5,
+    150,
+    'Josney',
+    'linha da ficha',
+    '77777777-0000-0000-0000-000000000005'::uuid
+  )$$,
+  'owner preenche linha do controle da irrigação'
+);
+
+select is((select duration_minutes from public.irrigation_events limit 1), 180, 'tempo total é calculado por horário inicial e final');
+select is((select count(*)::integer from public.operational_records where record_type='irrigacao'), 1, 'irrigação gera operational record interno');
+
+select throws_ok(
+  $$select public.create_irrigation_event(
+    (select id from public.properties where name='Fazenda Clima' limit 1),
+    (select id from public.irrigation_systems where name='Gotejamento Talhão Chuva' limit 1),
+    (select id from public.plots where name='Talhão Chuva' limit 1),
+    null::uuid,
+    '2026-02-15'::date,
+    null::time,
+    null::time,
+    60,
+    -1,
+    null::integer,
+    null::numeric,
+    null,
+    null,
+    '77777777-0000-0000-0000-000000000006'::uuid
+  )$$,
+  'P0001',
+  'irrigation_depth_negative',
+  'bloqueia lâmina negativa'
+);
+
+select lives_ok(
+  $$select public.update_irrigation_event(
+    (select id from public.irrigation_events limit 1),
+    (select id from public.irrigation_systems where name='Gotejamento Talhão Chuva' limit 1),
+    (select id from public.plots where name='Talhão Chuva' limit 1),
+    (select id from public.harvest_seasons where name='Safra Chuva' limit 1),
+    '2026-02-14'::date,
+    '19:00'::time,
+    '23:00'::time,
+    null::integer,
+    8,
+    5,
+    160,
+    'Josney',
+    'corrigido'
+  )$$,
+  'owner corrige linha da ficha de irrigação'
+);
+
+select is((select duration_minutes from public.irrigation_events limit 1), 240, 'correção recalcula tempo total');
+
+select lives_ok(
+  $$select public.delete_irrigation_event((select id from public.irrigation_events limit 1))$$,
+  'owner apaga irrigação logicamente'
+);
+
+select lives_ok(
+  $$select public.restore_irrigation_event((select id from public.irrigation_events limit 1), 'restaurar ficha')$$,
+  'owner restaura irrigação'
+);
+
+select ok(
+  (select count(*) >= 4 from public.audit_log where table_name = 'irrigation_events'),
+  'mutações da ficha de irrigação geram auditoria'
 );
 
 reset role;

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
-import { dailyWeatherSchema, measurementPointSchema, rainfallSchema } from "../domain/schemas";
+import { dailyWeatherSchema, irrigationEventSchema, irrigationSystemSchema, measurementPointSchema, rainfallSchema } from "../domain/schemas";
 import { ClimateWaterRepository } from "../infrastructure/supabase/climate-water-repository";
 import { climateErrorState } from "./action-errors";
 import type { ClimateActionState } from "./action-state";
@@ -20,6 +20,7 @@ function revalidateClimate() {
   revalidatePath("/climate");
   revalidatePath("/climate/rainfall");
   revalidatePath("/climate/daily-weather");
+  revalidatePath("/climate/irrigation");
   revalidatePath("/dashboard");
   revalidatePath("/operations");
 }
@@ -34,6 +35,50 @@ export async function createMeasurementPointAction(_: ClimateActionState, formDa
     await (await repository()).createMeasurementPoint(input);
     revalidateClimate();
     return { status: "success", message: "Pluviômetro ou local cadastrado com sucesso." };
+  } catch (error) {
+    return { ...climateErrorState(error), values: valuesOf(formData) };
+  }
+}
+
+export async function createIrrigationSystemAction(_: ClimateActionState, formData: FormData): Promise<ClimateActionState> {
+  try {
+    const input = irrigationSystemSchema.parse(readIrrigationSystemForm(formData));
+    await (await repository()).createIrrigationSystem(input);
+    revalidateClimate();
+    return { status: "success", message: "Sistema de irrigação cadastrado com sucesso." };
+  } catch (error) {
+    return { ...climateErrorState(error), values: valuesOf(formData) };
+  }
+}
+
+export async function updateIrrigationSystemAction(_: ClimateActionState, formData: FormData): Promise<ClimateActionState> {
+  try {
+    const input = irrigationSystemSchema.parse(readIrrigationSystemForm(formData));
+    await (await repository()).updateIrrigationSystem(input);
+    revalidateClimate();
+    return { status: "success", message: "Sistema de irrigação atualizado." };
+  } catch (error) {
+    return { ...climateErrorState(error), values: valuesOf(formData) };
+  }
+}
+
+export async function createIrrigationEventAction(_: ClimateActionState, formData: FormData): Promise<ClimateActionState> {
+  try {
+    const input = irrigationEventSchema.parse(readIrrigationEventForm(formData));
+    await (await repository()).createIrrigationEvent(input);
+    revalidateClimate();
+    return { status: "success", message: "Ficha de irrigação preenchida com sucesso." };
+  } catch (error) {
+    return { ...climateErrorState(error), values: valuesOf(formData) };
+  }
+}
+
+export async function updateIrrigationEventAction(_: ClimateActionState, formData: FormData): Promise<ClimateActionState> {
+  try {
+    const input = irrigationEventSchema.parse(readIrrigationEventForm(formData));
+    await (await repository()).updateIrrigationEvent(input);
+    revalidateClimate();
+    return { status: "success", message: "Registro de irrigação atualizado." };
   } catch (error) {
     return { ...climateErrorState(error), values: valuesOf(formData) };
   }
@@ -103,6 +148,26 @@ export async function restoreClimateReadingAction(_: ClimateActionState, formDat
   }
 }
 
+export async function deleteIrrigationEventAction(_: ClimateActionState, formData: FormData): Promise<ClimateActionState> {
+  try {
+    await (await repository()).deleteIrrigationEvent(String(formData.get("eventId") ?? ""));
+    revalidateClimate();
+    return { status: "success", message: "Registro de irrigação apagado logicamente. Ele permanece no histórico." };
+  } catch (error) {
+    return climateErrorState(error);
+  }
+}
+
+export async function restoreIrrigationEventAction(_: ClimateActionState, formData: FormData): Promise<ClimateActionState> {
+  try {
+    await (await repository()).restoreIrrigationEvent(String(formData.get("eventId") ?? ""));
+    revalidateClimate();
+    return { status: "success", message: "Registro de irrigação restaurado." };
+  } catch (error) {
+    return climateErrorState(error);
+  }
+}
+
 function readBaseForm(formData: FormData) {
   return {
     propertyId: formData.get("propertyId"),
@@ -126,5 +191,45 @@ function readDailyWeatherForm(formData: FormData) {
     temperatureMaxC: formData.get("temperatureMaxC"),
     relativeHumidityPct: formData.get("relativeHumidityPct"),
     harmfulOccurrences: formData.get("harmfulOccurrences"),
+  };
+}
+
+function readIrrigationSystemForm(formData: FormData) {
+  return {
+    propertyId: formData.get("propertyId"),
+    systemId: formData.get("systemId"),
+    plotId: formData.get("plotId"),
+    name: formData.get("name"),
+    systemType: formData.get("systemType"),
+    waterSource: formData.get("waterSource"),
+    emittersDescription: formData.get("emittersDescription"),
+    efficiencyPct: formData.get("efficiencyPct"),
+    wettedAreaM2: formData.get("wettedAreaM2"),
+    flowLh: formData.get("flowLh"),
+    motorDescription: formData.get("motorDescription"),
+    pumpDescription: formData.get("pumpDescription"),
+    pressureBar: formData.get("pressureBar"),
+    spacingDescription: formData.get("spacingDescription"),
+    notes: formData.get("notes"),
+  };
+}
+
+function readIrrigationEventForm(formData: FormData) {
+  return {
+    propertyId: formData.get("propertyId"),
+    eventId: formData.get("eventId"),
+    irrigationSystemId: formData.get("irrigationSystemId"),
+    plotId: formData.get("plotId"),
+    seasonId: formData.get("seasonId"),
+    occurredOn: formData.get("occurredOn"),
+    startedAt: formData.get("startedAt"),
+    endedAt: formData.get("endedAt"),
+    durationMinutes: formData.get("durationMinutes"),
+    appliedMm: formData.get("appliedMm"),
+    frequencyDays: formData.get("frequencyDays"),
+    averageVolumeL: formData.get("averageVolumeL"),
+    responsibleName: formData.get("responsibleName"),
+    notes: formData.get("notes"),
+    clientId: formData.get("clientId"),
   };
 }

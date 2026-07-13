@@ -25,6 +25,12 @@ function operationHref(recordType: string, seasonId?: string | null) {
     const query = params.toString();
     return `/climate/rainfall${query ? `?${query}` : ""}`;
   }
+  if (recordType === "irrigacao") {
+    const params = new URLSearchParams();
+    if (seasonId) params.set("seasonId", seasonId);
+    const query = params.toString();
+    return `/climate/irrigation${query ? `?${query}` : ""}`;
+  }
   const params = new URLSearchParams({ recordType });
   if (seasonId) params.set("seasonId", seasonId);
   return `/operations?${params.toString()}`;
@@ -38,7 +44,11 @@ function buildQuickActions(canManage: boolean, activeSeason: DashboardSeason | n
   return ["chuva", "irrigacao", "aplicacao", "monitoramento"].map((recordType, index) => ({
     key: recordType,
     label: actionLabels[recordType],
-    description: recordType === "chuva" ? "Informe volume e data da precipitação." : "Crie um registro rápido com contexto da propriedade.",
+    description: recordType === "chuva"
+      ? "Informe volume e data da precipitação."
+      : recordType === "irrigacao"
+        ? "Preencha a ficha de irrigação realizada."
+        : "Crie um registro rápido com contexto da propriedade.",
     href: operationHref(recordType, activeSeason?.id),
     kind: index === 0 ? "primary" : "secondary",
   }));
