@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { throwSupabaseError } from "@/modules/identity/infrastructure/supabase/identity-repository";
-import type { DashboardRecentRecord, DashboardSeason } from "../../domain/types";
+import type { DashboardProductionRecord, DashboardRecentRecord, DashboardSeason } from "../../domain/types";
 
 function startOfCurrentMonthIso() {
   const now = new Date();
@@ -15,13 +15,14 @@ export interface DashboardRepositorySummary {
   plantingSeasonLinkCount: number;
   recordsThisMonthCount: number;
   recentRecords: DashboardRecentRecord[];
+  productionRecords: DashboardProductionRecord[];
 }
 
 export class DashboardRepository {
   constructor(private readonly supabase: SupabaseClient) {}
 
   async getSummary(propertyId: string): Promise<DashboardRepositorySummary> {
-    const [plots, plantings, seasons, links, recordsThisMonth, recentRecords] = await Promise.all([
+    const [plots, plantings, seasons, links, recordsThisMonth, recentRecords, productionRecords] = await Promise.all([
       this.supabase.from("plots").select("id", { count: "exact", head: true }).eq("property_id", propertyId).neq("status", "closed"),
       this.supabase
         .from("plantings")
@@ -46,9 +47,14 @@ export class DashboardRepository {
         .is("deleted_at", null)
         .order("occurred_at", { ascending: false })
         .limit(5),
+      this.supabase
+        .from("production_records")
+        .select("season_id,total_sc,operational_records!inner(deleted_at)")
+        .eq("property_id", propertyId)
+        .is("operational_records.deleted_at", null),
     ]);
 
-    for (const result of [plots, plantings, seasons, links, recordsThisMonth, recentRecords]) {
+    for (const result of [plots, plantings, seasons, links, recordsThisMonth, recentRecords, productionRecords]) {
       if (result.error) throwSupabaseError(result.error);
     }
 
@@ -65,6 +71,10 @@ export class DashboardRepository {
         status: record.status as DashboardRecentRecord["status"],
         notes: record.notes as string | null,
         payload: (record.payload as Record<string, unknown>) ?? {},
+      })),
+      productionRecords: (productionRecords.data ?? []).map((record) => ({
+        season_id: record.season_id as string,
+        total_sc: String(record.total_sc ?? 0),
       })),
     };
   }

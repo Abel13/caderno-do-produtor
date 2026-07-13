@@ -20,6 +20,7 @@ const baseInput: DashboardSummaryInput = {
   plantingSeasonLinkCount: 1,
   recordsThisMonthCount: 3,
   recentRecords: [],
+  productionRecords: [],
 };
 
 describe("dashboard rules", () => {
@@ -56,5 +57,18 @@ describe("dashboard rules", () => {
 
     expect(dashboard.recommendedAction.href).toContain("/climate/rainfall");
     expect(dashboard.recommendedAction.href).toContain("seasonId=season-1");
+  });
+
+  it("mostra produção registrada na safra ativa", () => {
+    const dashboard = buildDashboardViewModel({
+      ...baseInput,
+      productionRecords: [
+        { season_id: "season-1", total_sc: "120" },
+        { season_id: "season-2", total_sc: "50" },
+      ],
+    });
+
+    expect(dashboard.metrics.find((metric) => metric.key === "production")?.value).toBe("120 sc");
+    expect(dashboard.quickActions.some((action) => action.key === "producao" && action.href.includes("/production"))).toBe(true);
   });
 });

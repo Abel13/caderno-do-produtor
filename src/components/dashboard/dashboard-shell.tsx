@@ -1,4 +1,4 @@
-import { Activity, Bell, CloudRain, Coffee, FileText, Home, Plus, Settings, Users, Clipboard } from "@/components/icons";
+import { Activity, Bell, CloudRain, Coffee, FileText, Home, Plus, Settings, TrendingUp, Users, Clipboard } from "@/components/icons";
 import { SystemAlert } from "@/components/atoms/system-alert";
 import { PropertySelector } from "@/components/molecules/property-selector";
 import { SeasonSelector } from "@/components/molecules/season-selector";
@@ -10,6 +10,7 @@ const recordTypeLabel: Record<string, string> = {
   chuva: "Chuva",
   clima_diario: "Clima diário",
   irrigacao: "Irrigação",
+  producao: "Produção",
   fertilizacao: "Fertilização",
   aplicacao: "Aplicação",
   monitoramento: "Monitoramento",
@@ -56,6 +57,7 @@ export function DashboardShell({ context, dashboard }: { context: IdentityContex
             <Nav href="/operations" Icon={Clipboard}>Histórico interno</Nav>
             <Nav href="/structure" Icon={Coffee}>Estrutura rural</Nav>
             <Nav href="/climate" Icon={CloudRain}>Clima e água</Nav>
+            <Nav href="/production" Icon={TrendingUp}>Produção</Nav>
             <Nav href="#" Icon={FileText}>Documentos</Nav>
             {dashboard.canManage && <Nav href="/settings/access" Icon={Users}>Acessos</Nav>}
             <Nav href="/settings/profile" Icon={Settings}>Configurações</Nav>

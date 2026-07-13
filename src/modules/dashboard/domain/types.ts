@@ -18,6 +18,11 @@ export interface DashboardRecentRecord {
   payload: Record<string, unknown> | null;
 }
 
+export interface DashboardProductionRecord {
+  season_id: string;
+  total_sc: string;
+}
+
 export interface DashboardSummaryInput {
   activeProperty: IdentityProperty;
   preferredSeasonId: string | null;
@@ -28,6 +33,7 @@ export interface DashboardSummaryInput {
   plantingSeasonLinkCount: number;
   recordsThisMonthCount: number;
   recentRecords: DashboardRecentRecord[];
+  productionRecords: DashboardProductionRecord[];
 }
 
 export interface DashboardMetric {

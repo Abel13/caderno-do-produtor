@@ -278,6 +278,8 @@ Uma ocorrência pode ser monitorada, tratada e reavaliada com histórico complet
 
 ## 12. Etapa 8 — Formação, produção e podas
 
+Esta etapa será executada em subetapas guiadas pelas fichas do caderno. O primeiro recorte entregue após clima e água é o controle de produção, porque depende apenas da estrutura rural, da safra e do backbone operacional já existentes.
+
 ### Controles contemplados
 
 - RF-02 — Formação de lavouras e cadastro de áreas.
@@ -286,6 +288,8 @@ Uma ocorrência pode ser monitorada, tratada e reavaliada com histórico complet
 
 ### Entregáveis
 
+- Subetapa 8A: ficha digital de Controle e Acompanhamento de Produção, com talhão, safra, área, produção em sc/ha, produção total em sacas, data da colheita, lote, processo de beneficiamento, bebida, tipo, catação e observações.
+- Subetapa 8A: consulta, filtros, edição, exclusão lógica, restauração, auditoria e resumo simples no dashboard.
 - Complementação agronômica da implantação da lavoura.
 - Origem e qualidade das mudas.
 - Operações de preparo e plantio.
@@ -295,7 +299,7 @@ Uma ocorrência pode ser monitorada, tratada e reavaliada com histórico complet
 - Previsão de recuperação produtiva.
 - Estimativas e metas de produção.
 - Registro de produção por área e safra.
-- Indicadores de produtividade e comparação histórica.
+- Indicadores avançados, comparações históricas, colheita detalhada e pós-colheita ficam para etapas específicas posteriores.
 
 ### Dependências
 
