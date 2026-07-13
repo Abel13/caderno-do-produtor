@@ -5,6 +5,7 @@ const actionLabels: Record<string, string> = {
   chuva: "Registrar chuva",
   irrigacao: "Registrar irrigação",
   producao: "Registrar produção",
+  analise_solo: "Registrar análise de solo",
   aplicacao: "Registrar aplicação",
   monitoramento: "Registrar monitoramento",
 };
@@ -38,6 +39,12 @@ function operationHref(recordType: string, seasonId?: string | null) {
     const query = params.toString();
     return `/production${query ? `?${query}` : ""}`;
   }
+  if (recordType === "analise_solo") {
+    const params = new URLSearchParams();
+    if (seasonId) params.set("seasonId", seasonId);
+    const query = params.toString();
+    return `/soil/analyses${query ? `?${query}` : ""}`;
+  }
   const params = new URLSearchParams({ recordType });
   if (seasonId) params.set("seasonId", seasonId);
   return `/operations?${params.toString()}`;
@@ -48,7 +55,7 @@ function buildQuickActions(canManage: boolean, activeSeason: DashboardSeason | n
     return [{ key: "consultar", label: "Consultar operações", description: "Veja o histórico permitido para seu acesso.", href: "/operations", kind: "primary" }];
   }
 
-  return ["chuva", "irrigacao", "producao", "aplicacao"].map((recordType, index) => ({
+  return ["chuva", "irrigacao", "producao", "analise_solo"].map((recordType, index) => ({
     key: recordType,
     label: actionLabels[recordType],
     description: recordType === "chuva"
@@ -57,7 +64,9 @@ function buildQuickActions(canManage: boolean, activeSeason: DashboardSeason | n
         ? "Preencha a ficha de irrigação realizada."
         : recordType === "producao"
           ? "Preencha a produção por talhão e safra."
-          : "Crie um registro rápido com contexto da propriedade.",
+          : recordType === "analise_solo"
+            ? "Lance uma análise e anexe o laudo original."
+            : "Crie um registro rápido com contexto da propriedade.",
     href: operationHref(recordType, activeSeason?.id),
     kind: index === 0 ? "primary" : "secondary",
   }));
@@ -105,7 +114,7 @@ export function buildDashboardViewModel(input: DashboardSummaryInput): Dashboard
       { key: "plantings", label: "Lavouras ativas", value: String(input.activePlantingCount), helper: input.activePlantingCount ? "Lavouras em acompanhamento." : "Cadastre a lavoura ativa." },
       { key: "season", label: "Safra ativa", value: activeSeason?.name ?? "Sem safra", helper: activeSeason ? `Situação: ${activeSeason.status}` : "Crie ou selecione uma safra." },
       { key: "production", label: "Produção na safra", value: `${new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 }).format(productionInActiveSeason)} sc`, helper: productionInActiveSeason ? "Soma da ficha de produção." : "Sem produção registrada na safra." },
-      { key: "records", label: "Registros no mês", value: String(input.recordsThisMonthCount), helper: input.recordsThisMonthCount ? "Operações registradas neste mês." : "Nenhum registro neste mês." },
+      { key: "soil", label: "Análises de solo", value: String(input.soilAnalysisCount), helper: input.soilAnalysisCount ? "Laudos registrados no caderno." : "Sem análise de solo registrada." },
     ],
   };
 }

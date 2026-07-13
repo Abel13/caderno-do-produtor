@@ -34,6 +34,7 @@ export interface DashboardSummaryInput {
   recordsThisMonthCount: number;
   recentRecords: DashboardRecentRecord[];
   productionRecords: DashboardProductionRecord[];
+  soilAnalysisCount: number;
 }
 
 export interface DashboardMetric {

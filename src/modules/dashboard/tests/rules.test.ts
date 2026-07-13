@@ -21,6 +21,7 @@ const baseInput: DashboardSummaryInput = {
   recordsThisMonthCount: 3,
   recentRecords: [],
   productionRecords: [],
+  soilAnalysisCount: 0,
 };
 
 describe("dashboard rules", () => {

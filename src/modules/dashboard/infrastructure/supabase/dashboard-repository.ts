@@ -16,13 +16,14 @@ export interface DashboardRepositorySummary {
   recordsThisMonthCount: number;
   recentRecords: DashboardRecentRecord[];
   productionRecords: DashboardProductionRecord[];
+  soilAnalysisCount: number;
 }
 
 export class DashboardRepository {
   constructor(private readonly supabase: SupabaseClient) {}
 
   async getSummary(propertyId: string): Promise<DashboardRepositorySummary> {
-    const [plots, plantings, seasons, links, recordsThisMonth, recentRecords, productionRecords] = await Promise.all([
+    const [plots, plantings, seasons, links, recordsThisMonth, recentRecords, productionRecords, soilAnalyses] = await Promise.all([
       this.supabase.from("plots").select("id", { count: "exact", head: true }).eq("property_id", propertyId).neq("status", "closed"),
       this.supabase
         .from("plantings")
@@ -52,9 +53,14 @@ export class DashboardRepository {
         .select("season_id,total_sc,operational_records!inner(deleted_at)")
         .eq("property_id", propertyId)
         .is("operational_records.deleted_at", null),
+      this.supabase
+        .from("soil_analysis_records")
+        .select("id,operational_records!inner(deleted_at)", { count: "exact", head: true })
+        .eq("property_id", propertyId)
+        .is("operational_records.deleted_at", null),
     ]);
 
-    for (const result of [plots, plantings, seasons, links, recordsThisMonth, recentRecords, productionRecords]) {
+    for (const result of [plots, plantings, seasons, links, recordsThisMonth, recentRecords, productionRecords, soilAnalyses]) {
       if (result.error) throwSupabaseError(result.error);
     }
 
@@ -76,6 +82,7 @@ export class DashboardRepository {
         season_id: record.season_id as string,
         total_sc: String(record.total_sc ?? 0),
       })),
+      soilAnalysisCount: soilAnalyses.count ?? 0,
     };
   }
 }

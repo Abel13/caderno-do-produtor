@@ -11,6 +11,7 @@ const recordTypeLabel: Record<string, string> = {
   clima_diario: "Clima diário",
   irrigacao: "Irrigação",
   producao: "Produção",
+  analise_solo: "Análise de solo",
   fertilizacao: "Fertilização",
   aplicacao: "Aplicação",
   monitoramento: "Monitoramento",
@@ -58,6 +59,7 @@ export function DashboardShell({ context, dashboard }: { context: IdentityContex
             <Nav href="/structure" Icon={Coffee}>Estrutura rural</Nav>
             <Nav href="/climate" Icon={CloudRain}>Clima e água</Nav>
             <Nav href="/production" Icon={TrendingUp}>Produção</Nav>
+            <Nav href="/soil" Icon={FileText}>Solo e nutrição</Nav>
             <Nav href="#" Icon={FileText}>Documentos</Nav>
             {dashboard.canManage && <Nav href="/settings/access" Icon={Users}>Acessos</Nav>}
             <Nav href="/settings/profile" Icon={Settings}>Configurações</Nav>

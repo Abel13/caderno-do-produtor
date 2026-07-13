@@ -224,6 +224,8 @@ O produtor consegue registrar e analisar a disponibilidade de água por propried
 
 ### Entregáveis
 
+- Subetapa 6A: ficha digital de Controle de Análises de Solo, com preenchimento manual, laudo original anexado e histórico por talhão/profundidade.
+- Subetapa 6A.2: importação assistida de PDF/OCR de laudos, com revisão humana antes de gravar dados definitivos.
 - Coletas, profundidades, pontos e laboratórios.
 - Laudos, parâmetros, unidades e métodos de análise.
 - Faixas de referência configuráveis.
