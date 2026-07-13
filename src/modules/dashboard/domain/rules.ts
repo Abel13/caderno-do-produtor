@@ -6,6 +6,7 @@ const actionLabels: Record<string, string> = {
   irrigacao: "Registrar irrigação",
   producao: "Registrar produção",
   analise_solo: "Registrar análise de solo",
+  correcao_solo: "Registrar correção do solo",
   aplicacao: "Registrar aplicação",
   monitoramento: "Registrar monitoramento",
 };
@@ -45,6 +46,12 @@ function operationHref(recordType: string, seasonId?: string | null) {
     const query = params.toString();
     return `/soil/analyses${query ? `?${query}` : ""}`;
   }
+  if (recordType === "correcao_solo") {
+    const params = new URLSearchParams();
+    if (seasonId) params.set("seasonId", seasonId);
+    const query = params.toString();
+    return `/soil/corrections${query ? `?${query}` : ""}`;
+  }
   const params = new URLSearchParams({ recordType });
   if (seasonId) params.set("seasonId", seasonId);
   return `/operations?${params.toString()}`;
@@ -55,7 +62,7 @@ function buildQuickActions(canManage: boolean, activeSeason: DashboardSeason | n
     return [{ key: "consultar", label: "Consultar operações", description: "Veja o histórico permitido para seu acesso.", href: "/operations", kind: "primary" }];
   }
 
-  return ["chuva", "irrigacao", "producao", "analise_solo"].map((recordType, index) => ({
+  return ["chuva", "irrigacao", "producao", "analise_solo", "correcao_solo"].map((recordType, index) => ({
     key: recordType,
     label: actionLabels[recordType],
     description: recordType === "chuva"
@@ -66,7 +73,9 @@ function buildQuickActions(canManage: boolean, activeSeason: DashboardSeason | n
           ? "Preencha a produção por talhão e safra."
           : recordType === "analise_solo"
             ? "Lance uma análise e anexe o laudo original."
-            : "Crie um registro rápido com contexto da propriedade.",
+            : recordType === "correcao_solo"
+              ? "Preencha a aplicação de corretivo realizada."
+              : "Crie um registro rápido com contexto da propriedade.",
     href: operationHref(recordType, activeSeason?.id),
     kind: index === 0 ? "primary" : "secondary",
   }));

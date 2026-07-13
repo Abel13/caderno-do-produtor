@@ -3,6 +3,7 @@ export interface SoilOption {
   name: string;
   status?: string;
   plot_id?: string;
+  area_ha?: string;
 }
 
 export interface SoilAnalysisAttachment {
@@ -65,10 +66,47 @@ export interface SoilFormContext {
   plots: SoilOption[];
   plantings: SoilOption[];
   seasons: SoilOption[];
+  analyses: SoilAnalysisOption[];
+}
+
+export interface SoilAnalysisOption {
+  id: string;
+  plot_id: string;
+  label: string;
+}
+
+export interface SoilCorrectionRecord {
+  id: string;
+  operational_record_id: string;
+  property_id: string;
+  plot_id: string;
+  planting_id: string | null;
+  season_id: string | null;
+  soil_analysis_id: string | null;
+  applied_on: string;
+  corrective_name: string;
+  prnt_pct: string | null;
+  recommended_dose_t_ha: string | null;
+  total_quantity_t: string;
+  labor_type: "hh" | "hm" | null;
+  labor_quantity: string | null;
+  fuel_l: string | null;
+  responsible_name: string | null;
+  notes: string | null;
+  operational_record: {
+    status: "draft" | "confirmed" | "cancelled" | "review_required";
+    deleted_at: string | null;
+  };
 }
 
 export interface SoilSummary {
   analysesCount: number;
   reportsCount: number;
   latestCollectedOn: string | null;
+}
+
+export interface SoilCorrectionSummary {
+  correctionsCount: number;
+  totalQuantityT: string;
+  latestAppliedOn: string | null;
 }

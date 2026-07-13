@@ -12,6 +12,11 @@ const messages: Record<string, string> = {
   occurred_at_required: "Informe a data da coleta.",
   occurred_at_invalid: "A data da coleta não pode ser futura.",
   season_closed_record: "A safra está encerrada e não aceita novos registros ou alterações comuns.",
+  soil_correction_not_found: "Correção do solo não encontrada.",
+  soil_correction_deleted: "Esta correção do solo está apagada logicamente.",
+  soil_correction_context_mismatch: "Talhão, lavoura, safra ou análise de solo não pertencem à propriedade ativa.",
+  soil_correction_invalid_quantity: "Revise dose, quantidade, hh/hm, combustível e corretivo utilizado.",
+  soil_correction_invalid_prnt: "O PRNT deve ser maior que zero e no máximo 200%.",
 };
 
 function codeFromError(error: unknown) {

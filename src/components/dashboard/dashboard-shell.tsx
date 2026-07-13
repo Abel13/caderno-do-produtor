@@ -12,6 +12,7 @@ const recordTypeLabel: Record<string, string> = {
   irrigacao: "Irrigação",
   producao: "Produção",
   analise_solo: "Análise de solo",
+  correcao_solo: "Correção do solo",
   fertilizacao: "Fertilização",
   aplicacao: "Aplicação",
   monitoramento: "Monitoramento",

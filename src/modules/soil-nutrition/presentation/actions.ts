@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
-import { soilAnalysisSchema } from "../domain/schemas";
+import { soilAnalysisSchema, soilCorrectionSchema } from "../domain/schemas";
 import { SoilNutritionRepository } from "../infrastructure/supabase/soil-nutrition-repository";
 import { soilErrorState } from "./action-errors";
 import type { SoilActionState } from "./action-state";
@@ -22,8 +22,51 @@ function valuesOf(formData: FormData) {
 function revalidateSoil() {
   revalidatePath("/soil");
   revalidatePath("/soil/analyses");
+  revalidatePath("/soil/corrections");
   revalidatePath("/dashboard");
   revalidatePath("/operations");
+}
+
+export async function createSoilCorrectionAction(_: SoilActionState, formData: FormData): Promise<SoilActionState> {
+  try {
+    const input = soilCorrectionSchema.parse(readSoilCorrectionForm(formData));
+    await (await repository()).createCorrection(input);
+    revalidateSoil();
+    return { status: "success", message: "Correção do solo registrada com sucesso." };
+  } catch (error) {
+    return { ...soilErrorState(error), values: valuesOf(formData) };
+  }
+}
+
+export async function updateSoilCorrectionAction(_: SoilActionState, formData: FormData): Promise<SoilActionState> {
+  try {
+    const input = soilCorrectionSchema.parse(readSoilCorrectionForm(formData));
+    await (await repository()).updateCorrection(input);
+    revalidateSoil();
+    return { status: "success", message: "Correção do solo atualizada." };
+  } catch (error) {
+    return { ...soilErrorState(error), values: valuesOf(formData) };
+  }
+}
+
+export async function deleteSoilCorrectionAction(_: SoilActionState, formData: FormData): Promise<SoilActionState> {
+  try {
+    await (await repository()).deleteCorrection(String(formData.get("correctionId") ?? ""));
+    revalidateSoil();
+    return { status: "success", message: "Correção apagada logicamente. Ela permanece no histórico." };
+  } catch (error) {
+    return soilErrorState(error);
+  }
+}
+
+export async function restoreSoilCorrectionAction(_: SoilActionState, formData: FormData): Promise<SoilActionState> {
+  try {
+    await (await repository()).restoreCorrection(String(formData.get("correctionId") ?? ""));
+    revalidateSoil();
+    return { status: "success", message: "Correção restaurada." };
+  } catch (error) {
+    return soilErrorState(error);
+  }
 }
 
 export async function createSoilAnalysisAction(_: SoilActionState, formData: FormData): Promise<SoilActionState> {
@@ -124,5 +167,27 @@ function readSoilAnalysisForm(formData: FormData) {
     sandPct: formData.get("sandPct"),
     siltPct: formData.get("siltPct"),
     clayPct: formData.get("clayPct"),
+  };
+}
+
+function readSoilCorrectionForm(formData: FormData) {
+  return {
+    propertyId: formData.get("propertyId"),
+    correctionId: formData.get("correctionId"),
+    plotId: formData.get("plotId"),
+    plantingId: formData.get("plantingId"),
+    seasonId: formData.get("seasonId"),
+    soilAnalysisId: formData.get("soilAnalysisId"),
+    appliedOn: formData.get("appliedOn"),
+    correctiveName: formData.get("correctiveName"),
+    prntPct: formData.get("prntPct"),
+    recommendedDoseTHa: formData.get("recommendedDoseTHa"),
+    totalQuantityT: formData.get("totalQuantityT"),
+    laborType: formData.get("laborType"),
+    laborQuantity: formData.get("laborQuantity"),
+    fuelL: formData.get("fuelL"),
+    responsibleName: formData.get("responsibleName"),
+    notes: formData.get("notes"),
+    clientId: formData.get("clientId"),
   };
 }

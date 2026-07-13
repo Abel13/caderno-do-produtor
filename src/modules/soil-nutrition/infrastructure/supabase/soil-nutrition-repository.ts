@@ -1,11 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { throwSupabaseError } from "@/modules/identity/infrastructure/supabase/identity-repository";
-import type { SoilAnalysisFilterInput, SoilAnalysisInput } from "../../domain/schemas";
-import type { SoilAnalysisAttachment, SoilAnalysisRecord, SoilFormContext } from "../../domain/types";
+import type { SoilAnalysisFilterInput, SoilAnalysisInput, SoilCorrectionFilterInput, SoilCorrectionInput } from "../../domain/schemas";
+import type { SoilAnalysisAttachment, SoilAnalysisRecord, SoilCorrectionRecord, SoilFormContext } from "../../domain/types";
 
 type OperationalRecordRef = SoilAnalysisRecord["operational_record"] | SoilAnalysisRecord["operational_record"][] | null;
 type RawSoilAnalysisRecord = Omit<SoilAnalysisRecord, "operational_record" | "attachments"> & { operational_records: OperationalRecordRef };
+type RawSoilCorrectionRecord = Omit<SoilCorrectionRecord, "operational_record"> & { operational_records: SoilCorrectionRecord["operational_record"] | SoilCorrectionRecord["operational_record"][] | null };
 
 const parameterKeys = [
   "phWater", "phCacl2", "phKcl", "pMgDm3", "kMgDm3", "caCmolcDm3", "mgCmolcDm3", "alCmolcDm3", "hAlCmolcDm3",
@@ -58,8 +59,8 @@ export class SoilNutritionRepository {
   constructor(private readonly supabase: SupabaseClient) {}
 
   async getFormContext(propertyId: string): Promise<SoilFormContext> {
-    const [plots, plantings, seasons] = await Promise.all([
-      this.supabase.from("plots").select("id,name,status").eq("property_id", propertyId).neq("status", "closed").order("name"),
+    const [plots, plantings, seasons, analyses] = await Promise.all([
+      this.supabase.from("plots").select("id,name,status,area_ha").eq("property_id", propertyId).neq("status", "closed").order("name"),
       this.supabase
         .from("plantings")
         .select("id,status,plot:plots!inner(id,name,property_id)")
@@ -67,17 +68,29 @@ export class SoilNutritionRepository {
         .neq("status", "closed")
         .order("created_at", { ascending: false }),
       this.supabase.from("harvest_seasons").select("id,name,status").eq("property_id", propertyId).neq("status", "closed").order("starts_on", { ascending: false }),
+      this.supabase
+        .from("soil_analysis_records")
+        .select("id,plot_id,collected_on,depth_cm,report_number,laboratory_name,operational_records!inner(deleted_at)")
+        .eq("property_id", propertyId)
+        .is("operational_records.deleted_at", null)
+        .order("collected_on", { ascending: false }),
     ]);
     if (plots.error) throwSupabaseError(plots.error);
     if (plantings.error) throwSupabaseError(plantings.error);
     if (seasons.error) throwSupabaseError(seasons.error);
+    if (analyses.error) throwSupabaseError(analyses.error);
     return {
-      plots: (plots.data ?? []).map((item) => ({ id: item.id as string, name: item.name as string, status: item.status as string })),
+      plots: (plots.data ?? []).map((item) => ({ id: item.id as string, name: item.name as string, status: item.status as string, area_ha: normalizeDecimal(item.area_ha as string | number | null) ?? undefined })),
       plantings: (plantings.data ?? []).map((item) => {
         const plot = Array.isArray(item.plot) ? item.plot[0] : item.plot;
         return { id: item.id as string, name: `${plot?.name ?? "Talhão"} · ${item.status}`, status: item.status as string, plot_id: plot?.id as string };
       }),
       seasons: (seasons.data ?? []).map((item) => ({ id: item.id as string, name: item.name as string, status: item.status as string })),
+      analyses: (analyses.data ?? []).map((item) => ({
+        id: item.id as string,
+        plot_id: item.plot_id as string,
+        label: `${item.report_number ? `${item.report_number} · ` : ""}${item.depth_cm} · ${new Intl.DateTimeFormat("pt-BR").format(new Date(`${item.collected_on}T12:00:00`))}`,
+      })),
     };
   }
 
@@ -202,6 +215,89 @@ export class SoilNutritionRepository {
       target_mime_type: file.type || "application/octet-stream",
       target_size_bytes: file.size,
     });
+    if (error) throwSupabaseError(error);
+  }
+
+  async listCorrections(filters: SoilCorrectionFilterInput): Promise<SoilCorrectionRecord[]> {
+    let query = this.supabase
+      .from("soil_correction_records")
+      .select("id,operational_record_id,property_id,plot_id,planting_id,season_id,soil_analysis_id,applied_on,corrective_name,prnt_pct,recommended_dose_t_ha,total_quantity_t,labor_type,labor_quantity,fuel_l,responsible_name,notes,operational_records!inner(status,deleted_at)")
+      .eq("property_id", filters.propertyId)
+      .order("applied_on", { ascending: false })
+      .limit(80);
+    if (filters.plotId) query = query.eq("plot_id", filters.plotId);
+    if (filters.plantingId) query = query.eq("planting_id", filters.plantingId);
+    if (filters.seasonId) query = query.eq("season_id", filters.seasonId);
+    if (filters.soilAnalysisId) query = query.eq("soil_analysis_id", filters.soilAnalysisId);
+    if (filters.from) query = query.gte("applied_on", filters.from);
+    if (filters.to) query = query.lte("applied_on", filters.to);
+    if (!filters.showDeleted) query = query.is("operational_records.deleted_at", null);
+    const { data, error } = await query;
+    if (error) throwSupabaseError(error);
+    return ((data ?? []) as unknown as RawSoilCorrectionRecord[]).map((item) => {
+      const operationalRecord = Array.isArray(item.operational_records) ? item.operational_records[0] : item.operational_records;
+      return {
+        ...item,
+        prnt_pct: normalizeDecimal(item.prnt_pct),
+        recommended_dose_t_ha: normalizeDecimal(item.recommended_dose_t_ha),
+        total_quantity_t: String(item.total_quantity_t),
+        labor_quantity: normalizeDecimal(item.labor_quantity),
+        fuel_l: normalizeDecimal(item.fuel_l),
+        operational_record: operationalRecord ?? { status: "confirmed", deleted_at: null },
+      };
+    });
+  }
+
+  async createCorrection(input: SoilCorrectionInput) {
+    const { error } = await this.supabase.rpc("create_soil_correction_record", {
+      target_property_id: input.propertyId,
+      target_plot_id: input.plotId,
+      target_planting_id: input.plantingId,
+      target_season_id: input.seasonId,
+      target_soil_analysis_id: input.soilAnalysisId,
+      target_applied_on: input.appliedOn,
+      target_corrective_name: input.correctiveName,
+      target_prnt_pct: input.prntPct,
+      target_recommended_dose_t_ha: input.recommendedDoseTHa,
+      target_total_quantity_t: input.totalQuantityT,
+      target_labor_type: input.laborType,
+      target_labor_quantity: input.laborQuantity,
+      target_fuel_l: input.fuelL,
+      target_responsible_name: input.responsibleName,
+      target_notes: input.notes,
+      target_client_id: input.clientId ?? crypto.randomUUID(),
+    });
+    if (error) throwSupabaseError(error);
+  }
+
+  async updateCorrection(input: SoilCorrectionInput) {
+    const { error } = await this.supabase.rpc("update_soil_correction_record", {
+      target_correction_id: input.correctionId,
+      target_plot_id: input.plotId,
+      target_planting_id: input.plantingId,
+      target_season_id: input.seasonId,
+      target_soil_analysis_id: input.soilAnalysisId,
+      target_applied_on: input.appliedOn,
+      target_corrective_name: input.correctiveName,
+      target_prnt_pct: input.prntPct,
+      target_recommended_dose_t_ha: input.recommendedDoseTHa,
+      target_total_quantity_t: input.totalQuantityT,
+      target_labor_type: input.laborType,
+      target_labor_quantity: input.laborQuantity,
+      target_fuel_l: input.fuelL,
+      target_responsible_name: input.responsibleName,
+      target_notes: input.notes,
+    });
+    if (error) throwSupabaseError(error);
+  }
+
+  async deleteCorrection(correctionId: string) {
+    const { error } = await this.supabase.rpc("delete_soil_correction_record", { target_correction_id: correctionId });
+    if (error) throwSupabaseError(error);
+  }
+
+  async restoreCorrection(correctionId: string) {
+    const { error } = await this.supabase.rpc("restore_soil_correction_record", { target_correction_id: correctionId, target_notes: null });
     if (error) throwSupabaseError(error);
   }
 

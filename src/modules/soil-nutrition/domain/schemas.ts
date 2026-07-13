@@ -11,6 +11,7 @@ const optionalDecimal = z.preprocess(
 const ph = optionalDecimal.refine((value) => value === null || (value >= 0 && value <= 14), "O pH deve estar entre 0 e 14.");
 const nonNegative = optionalDecimal.refine((value) => value === null || value >= 0, "O valor não pode ser negativo.");
 const percentage = optionalDecimal.refine((value) => value === null || (value >= 0 && value <= 100), "Informe percentual entre 0 e 100.");
+const prnt = optionalDecimal.refine((value) => value === null || (value > 0 && value <= 200), "O PRNT deve ser maior que zero e no máximo 200%.");
 
 export const soilAnalysisSchema = z
   .object({
@@ -72,5 +73,50 @@ export const soilAnalysisFilterSchema = z.object({
   showDeleted: z.preprocess((value) => value === "1" || value === true, z.boolean()),
 });
 
+export const soilCorrectionSchema = z
+  .object({
+    propertyId: z.string().uuid("Selecione a propriedade."),
+    correctionId: z.preprocess((value) => (value === "" || value == null ? undefined : String(value)), z.string().uuid().optional()),
+    plotId: z.string().uuid("Selecione o talhão."),
+    plantingId: optionalUuid,
+    seasonId: optionalUuid,
+    soilAnalysisId: optionalUuid,
+    appliedOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Informe a data de aplicação."),
+    correctiveName: z.string().trim().min(1, "Informe o corretivo utilizado.").max(120, "Use até 120 caracteres."),
+    prntPct: prnt,
+    recommendedDoseTHa: nonNegative,
+    totalQuantityT: nonNegative.refine((value) => value !== null, "Informe a quantidade total."),
+    laborType: z.preprocess((value) => (value === "" || value == null ? null : String(value)), z.enum(["hh", "hm"]).nullable()),
+    laborQuantity: nonNegative,
+    fuelL: nonNegative,
+    responsibleName: optionalShortText,
+    notes: optionalText,
+    clientId: z.preprocess((value) => (value === "" || value == null ? null : String(value)), z.string().uuid().nullable().optional()),
+  })
+  .superRefine((value, ctx) => {
+    const applied = new Date(`${value.appliedOn}T00:00:00.000Z`);
+    const tomorrow = new Date();
+    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+    if (applied > tomorrow) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["appliedOn"], message: "A data de aplicação não pode ser futura." });
+    }
+    if (value.laborQuantity !== null && value.laborQuantity > 0 && value.laborType === null) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["laborType"], message: "Informe se a demanda é hh ou hm." });
+    }
+  });
+
+export const soilCorrectionFilterSchema = z.object({
+  propertyId: z.string().uuid(),
+  plotId: z.preprocess((value) => (value === "" || value == null ? undefined : String(value)), z.string().uuid().optional()),
+  plantingId: z.preprocess((value) => (value === "" || value == null ? undefined : String(value)), z.string().uuid().optional()),
+  seasonId: z.preprocess((value) => (value === "" || value == null ? undefined : String(value)), z.string().uuid().optional()),
+  soilAnalysisId: z.preprocess((value) => (value === "" || value == null ? undefined : String(value)), z.string().uuid().optional()),
+  from: z.preprocess((value) => (value === "" || value == null ? undefined : String(value)), z.string().max(10).optional()),
+  to: z.preprocess((value) => (value === "" || value == null ? undefined : String(value)), z.string().max(10).optional()),
+  showDeleted: z.preprocess((value) => value === "1" || value === true, z.boolean()),
+});
+
 export type SoilAnalysisInput = z.infer<typeof soilAnalysisSchema>;
 export type SoilAnalysisFilterInput = z.infer<typeof soilAnalysisFilterSchema>;
+export type SoilCorrectionInput = z.infer<typeof soilCorrectionSchema>;
+export type SoilCorrectionFilterInput = z.infer<typeof soilCorrectionFilterSchema>;
