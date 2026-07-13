@@ -54,7 +54,7 @@ describe("dashboard rules", () => {
   it("direciona ação rápida de chuva com safra ativa", () => {
     const dashboard = buildDashboardViewModel({ ...baseInput, recordsThisMonthCount: 0 });
 
-    expect(dashboard.recommendedAction.href).toContain("recordType=chuva");
+    expect(dashboard.recommendedAction.href).toContain("/climate/rainfall");
     expect(dashboard.recommendedAction.href).toContain("seasonId=season-1");
   });
 });

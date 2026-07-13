@@ -19,6 +19,12 @@ function chooseActiveSeason(seasons: DashboardSeason[], preferredSeasonId: strin
 }
 
 function operationHref(recordType: string, seasonId?: string | null) {
+  if (recordType === "chuva") {
+    const params = new URLSearchParams();
+    if (seasonId) params.set("seasonId", seasonId);
+    const query = params.toString();
+    return `/climate/rainfall${query ? `?${query}` : ""}`;
+  }
   const params = new URLSearchParams({ recordType });
   if (seasonId) params.set("seasonId", seasonId);
   return `/operations?${params.toString()}`;

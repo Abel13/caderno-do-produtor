@@ -116,11 +116,11 @@ O sistema deve planejar e acompanhar podas.
 
 ### RF-12 — Segundo controle pluviométrico
 
-O sumário fotografado apresenta um segundo tópico denominado “Controle pluviométrico”. O sistema deve tratá-lo provisoriamente como uma visão detalhada ou continuação do RF-01.
+O sumário fotografado apresenta um segundo tópico denominado “Controle pluviométrico”. Na implementação, ele será tratado como controle climático diário, separado do RF-01.
 
-- Dados e regras: os mesmos do RF-01, admitindo campos adicionais identificados após validação do caderno completo.
+- Dados: data, chuva em milímetros, temperatura mínima/média/máxima, umidade relativa e ocorrências prejudiciais.
 - Saídas: série histórica e consolidação de chuva por fase da cultura.
-- Pendência: confirmar se o título é realmente “Controle pluviométrico” e se os tópicos 1 e 12 devem ser unificados.
+- Decisão: manter separado do controle pluviométrico simples na interface e no tipo de registro operacional.
 
 ### RF-13 — Controle da irrigação
 

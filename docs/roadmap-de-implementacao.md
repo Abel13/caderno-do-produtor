@@ -185,18 +185,19 @@ O usuário encontra informações essenciais na página inicial e inicia os pree
 ### Controles contemplados
 
 - RF-01 — Controle pluviométrico.
-- RF-12 — Segundo controle pluviométrico, sujeito à validação da nomenclatura.
+- RF-12 — Controle climático diário, tratado separadamente do controle pluviométrico simples.
 - RF-13 — Controle da irrigação.
 
 ### Entregáveis
 
-- Cadastro de pontos e equipamentos de medição.
-- Registros de chuva por data e local.
-- Acumulados diário, mensal e por safra.
-- Planejamento e realização de irrigação.
-- Sistema, fonte, duração, vazão, lâmina e consumo.
-- Relação entre chuva e irrigação.
-- Gráficos e alertas no dashboard.
+- Subetapa 5A: cadastro de pontos de medição e registros de chuva.
+- Subetapa 5A: controle pluviométrico simples por data, local e volume em milímetros.
+- Subetapa 5A: controle climático diário com chuva, temperatura, umidade e ocorrências prejudiciais.
+- Subetapa 5A: acumulados do mês e da safra ativa.
+- Subetapa 5B: planejamento e realização de irrigação.
+- Subetapa 5B: sistema, fonte, duração, vazão, lâmina e consumo.
+- Subetapa 5B: relação entre chuva e irrigação.
+- Gráficos e alertas no dashboard como evolução após os registros básicos.
 - Exportação das tabelas correspondentes ao caderno.
 
 ### Dependências

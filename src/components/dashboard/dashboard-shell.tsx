@@ -8,6 +8,7 @@ import type { DashboardAction, DashboardMetric, DashboardRecentRecord, Dashboard
 
 const recordTypeLabel: Record<string, string> = {
   chuva: "Chuva",
+  clima_diario: "Clima diário",
   irrigacao: "Irrigação",
   fertilizacao: "Fertilização",
   aplicacao: "Aplicação",
@@ -54,7 +55,7 @@ export function DashboardShell({ context, dashboard }: { context: IdentityContex
             <Nav href="/dashboard" Icon={Home}>Visão geral</Nav>
             <Nav href="/operations" Icon={Clipboard}>Operações</Nav>
             <Nav href="/structure" Icon={Coffee}>Estrutura rural</Nav>
-            <Nav href="/operations?recordType=chuva" Icon={CloudRain}>Clima e água</Nav>
+            <Nav href="/climate" Icon={CloudRain}>Clima e água</Nav>
             <Nav href="#" Icon={FileText}>Documentos</Nav>
             {dashboard.canManage && <Nav href="/settings/access" Icon={Users}>Acessos</Nav>}
             <Nav href="/settings/profile" Icon={Settings}>Configurações</Nav>

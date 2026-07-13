@@ -199,7 +199,7 @@ select throws_ok(
 select set_config('request.jwt.claim.sub', '50000000-0000-0000-0000-000000000001', true);
 select is(
   (select count(*)::integer from public.operation_types where active),
-  5,
+  6,
   'catálogo base de tipos de operação disponível'
 );
 
