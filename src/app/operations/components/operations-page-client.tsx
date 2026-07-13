@@ -2,7 +2,7 @@
 
 import { useActionState, useMemo, useState } from "react";
 
-import { Edit2, FileText, Plus, Save, Trash2 } from "@/components/icons";
+import { Edit2, FileText, Plus, Save, Sliders, Trash2, X } from "@/components/icons";
 import { SystemAlert } from "@/components/atoms/system-alert";
 import { Button } from "@/components/ui/button";
 import { createOperationAction, deleteOperationAction, restoreOperationAction, updateOperationAction } from "@/modules/operations/presentation/actions";
@@ -66,6 +66,7 @@ export function OperationsPageClient({
   total,
 }: OperationsPageClientProps) {
   const [createOpen, setCreateOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<OperationalRecordSummary | null>(null);
 
   const plotById = useMemo(
@@ -118,6 +119,16 @@ export function OperationsPageClient({
     const payload = record.payload as Record<string, unknown> | null;
     return typeof payload?.comment === "string" && payload.comment.trim() ? payload.comment : null;
   };
+  const activeFilterCount = [
+    searchParams.recordType,
+    searchParams.seasonId,
+    searchParams.plotId,
+    searchParams.status,
+    searchParams.from,
+    searchParams.to,
+    searchParams.showDeleted ? "1" : "",
+  ].filter(Boolean).length;
+  const activeFilterSummary = activeFilterCount === 0 ? "Sem filtros aplicados" : `${activeFilterCount} filtro${activeFilterCount === 1 ? "" : "s"} aplicado${activeFilterCount === 1 ? "" : "s"}`;
 
   return (
     <div className="mt-6">
@@ -129,74 +140,29 @@ export function OperationsPageClient({
       </div>
 
       <section className="mt-4 rounded-2xl border bg-white p-4">
-        <div className="flex items-center gap-2">
-          <FileText className="size-5 text-emerald-800" aria-hidden="true" />
-          <h1 className="text-xl font-bold">Registros operacionais</h1>
-        </div>
-        <p className="mt-2 text-sm text-stone-600">
-          Cada registro reúne área, responsável, situação e contexto de ocorrência para reutilização em módulos futuros.
-        </p>
-
-        <form method="get" className="mt-4 grid gap-3 sm:grid-cols-3">
-          <label className="text-sm">
-            Tipo
-            <select name="recordType" defaultValue={searchParams.recordType} className="mt-1 h-11 w-full rounded-xl border border-stone-300">
-              <option value="">Todos</option>
-              {recordTypes.map((recordType) => (
-                <option key={recordType.code} value={recordType.code}>
-                  {recordType.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="text-sm">
-            Safra
-            <select name="seasonId" defaultValue={searchParams.seasonId} className="mt-1 h-11 w-full rounded-xl border border-stone-300">
-              <option value="">Todas</option>
-              {seasons.map((season) => (
-                <option key={season.id} value={season.id}>
-                  {season.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="text-sm">
-            Talhão
-            <select name="plotId" defaultValue={searchParams.plotId} className="mt-1 h-11 w-full rounded-xl border border-stone-300">
-              <option value="">Todos</option>
-              {plots.map((plot) => (
-                <option key={plot.id} value={plot.id}>
-                  {plot.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="text-sm">
-            Situação
-            <select name="status" defaultValue={searchParams.status} className="mt-1 h-11 w-full rounded-xl border border-stone-300">
-              <option value="">Todas</option>
-              <option value="draft">Rascunho</option>
-              <option value="confirmed">Confirmado</option>
-              <option value="cancelled">Cancelado</option>
-              <option value="review_required">Em revisão</option>
-            </select>
-          </label>
-          <label className="text-sm">
-            De
-            <input name="from" type="date" defaultValue={searchParams.from} className="mt-1 h-11 w-full rounded-xl border border-stone-300 px-3" />
-          </label>
-          <label className="text-sm">
-            Até
-            <input name="to" type="date" defaultValue={searchParams.to} className="mt-1 h-11 w-full rounded-xl border border-stone-300 px-3" />
-          </label>
-          <label className="flex items-end text-sm">
-            <input id="showDeleted" type="checkbox" name="showDeleted" value="1" defaultChecked={searchParams.showDeleted} />
-            <span className="ml-2">Exibir apagados</span>
-          </label>
-          <div className="flex items-end">
-            <Button type="submit">Aplicar filtro</Button>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <FileText className="size-5 text-emerald-800" aria-hidden="true" />
+              <h1 className="text-xl font-bold">Registros operacionais</h1>
+            </div>
+            <p className="mt-2 text-sm text-stone-600">
+              Cada registro reúne área, responsável, situação e contexto de ocorrência para reutilização em módulos futuros.
+            </p>
+            <p className="mt-2 text-xs font-semibold text-stone-500">{activeFilterSummary}</p>
           </div>
-        </form>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="secondary" onClick={() => setFiltersOpen(true)}>
+              <Sliders className="size-4" aria-hidden="true" />
+              Filtrar
+            </Button>
+            {activeFilterCount > 0 && (
+              <a href="/operations" className="inline-flex h-11 items-center rounded-xl px-4 text-sm font-semibold text-stone-600 hover:bg-stone-100">
+                Limpar filtros
+              </a>
+            )}
+          </div>
+        </div>
       </section>
 
       {canManage && (
@@ -287,6 +253,109 @@ export function OperationsPageClient({
           initialRecord={editingRecord}
         />
       )}
+      {filtersOpen && (
+        <OperationFilterModal
+          recordTypes={recordTypes}
+          plots={plots}
+          seasons={seasons}
+          searchParams={searchParams}
+          onClose={() => setFiltersOpen(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function OperationFilterModal({
+  recordTypes,
+  plots,
+  seasons,
+  searchParams,
+  onClose,
+}: {
+  recordTypes: OperationFormContext["recordTypes"];
+  plots: PlotOption[];
+  seasons: SeasonOption[];
+  searchParams: OperationsPageClientProps["searchParams"];
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-40 grid place-items-center bg-stone-900/50 p-4">
+      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-bold">Filtrar registros</h2>
+            <p className="mt-1 text-sm text-stone-600">Use filtros quando quiser encontrar registros específicos.</p>
+          </div>
+          <Button type="button" variant="ghost" size="icon" aria-label="Fechar filtros" onClick={onClose}>
+            <X className="size-5" aria-hidden="true" />
+          </Button>
+        </div>
+
+        <form method="get" className="mt-4 grid gap-3 sm:grid-cols-2">
+          <label className="text-sm font-semibold">
+            Tipo
+            <select name="recordType" defaultValue={searchParams.recordType} className="mt-1 h-11 w-full rounded-xl border border-stone-300">
+              <option value="">Todos</option>
+              {recordTypes.map((recordType) => (
+                <option key={recordType.code} value={recordType.code}>
+                  {recordType.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-sm font-semibold">
+            Safra
+            <select name="seasonId" defaultValue={searchParams.seasonId} className="mt-1 h-11 w-full rounded-xl border border-stone-300">
+              <option value="">Todas</option>
+              {seasons.map((season) => (
+                <option key={season.id} value={season.id}>
+                  {season.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-sm font-semibold">
+            Talhão
+            <select name="plotId" defaultValue={searchParams.plotId} className="mt-1 h-11 w-full rounded-xl border border-stone-300">
+              <option value="">Todos</option>
+              {plots.map((plot) => (
+                <option key={plot.id} value={plot.id}>
+                  {plot.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-sm font-semibold">
+            Situação
+            <select name="status" defaultValue={searchParams.status} className="mt-1 h-11 w-full rounded-xl border border-stone-300">
+              <option value="">Todas</option>
+              <option value="draft">Rascunho</option>
+              <option value="confirmed">Confirmado</option>
+              <option value="cancelled">Cancelado</option>
+              <option value="review_required">Em revisão</option>
+            </select>
+          </label>
+          <label className="text-sm font-semibold">
+            De
+            <input name="from" type="date" defaultValue={searchParams.from} className="mt-1 h-11 w-full rounded-xl border border-stone-300 px-3" />
+          </label>
+          <label className="text-sm font-semibold">
+            Até
+            <input name="to" type="date" defaultValue={searchParams.to} className="mt-1 h-11 w-full rounded-xl border border-stone-300 px-3" />
+          </label>
+          <label className="flex items-center text-sm font-semibold">
+            <input id="showDeleted" type="checkbox" name="showDeleted" value="1" defaultChecked={searchParams.showDeleted} />
+            <span className="ml-2">Exibir apagados</span>
+          </label>
+          <div className="flex flex-wrap items-center justify-end gap-2 sm:col-span-2">
+            <a href="/operations" className="inline-flex h-11 items-center rounded-xl px-4 text-sm font-semibold text-stone-600 hover:bg-stone-100">
+              Limpar filtros
+            </a>
+            <Button type="submit">Aplicar filtro</Button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
