@@ -17,6 +17,10 @@ export async function setActiveProperty(repository: IdentityRepository, property
   return repository.setActiveProperty(propertyId);
 }
 
+export async function setActiveSeason(repository: IdentityRepository, seasonId: string | null) {
+  return repository.setActiveSeason(seasonId);
+}
+
 export async function revokeAccountInvitation(repository: IdentityRepository, invitationId: string) {
   return repository.revokeInvitation(invitationId);
 }

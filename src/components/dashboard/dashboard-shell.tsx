@@ -1,13 +1,24 @@
-import { Bell, Calendar, CloudRain, Coffee, FileText, Home, Plus, Settings, TrendingUp, Users, Clipboard } from "@/components/icons";
+import { Activity, Bell, CloudRain, Coffee, FileText, Home, Plus, Settings, Users, Clipboard } from "@/components/icons";
+import { SystemAlert } from "@/components/atoms/system-alert";
 import { PropertySelector } from "@/components/molecules/property-selector";
+import { SeasonSelector } from "@/components/molecules/season-selector";
 import { accountRoleLabel } from "@/modules/identity/domain/permissions";
-import type { IdentityContext, IdentityProperty } from "@/modules/identity/domain/types";
+import type { IdentityContext } from "@/modules/identity/domain/types";
+import type { DashboardAction, DashboardMetric, DashboardRecentRecord, DashboardViewModel } from "@/modules/dashboard/domain/types";
 
-export function DashboardShell({ context, activeProperty }: { context: IdentityContext; activeProperty: IdentityProperty }) {
+const recordTypeLabel: Record<string, string> = {
+  chuva: "Chuva",
+  irrigacao: "Irrigação",
+  fertilizacao: "Fertilização",
+  aplicacao: "Aplicação",
+  monitoramento: "Monitoramento",
+};
+
+export function DashboardShell({ context, dashboard }: { context: IdentityContext; dashboard: DashboardViewModel }) {
+  const activeProperty = dashboard.activeProperty;
   const firstName = context.profile.full_name?.split(" ")[0] ?? "produtor";
   const membership = context.memberships.find((item) => item.account_id === activeProperty.account_id);
-  const canManage = membership && ["owner", "manager"].includes(membership.role);
-  const roleLabel = membership ? accountRoleLabel(membership.role) : "Sem vínculo";
+  const roleLabel = accountRoleLabel(dashboard.role);
 
   return (
     <div className="min-h-screen bg-[#f7f6f1] text-stone-900">
@@ -40,79 +51,97 @@ export function DashboardShell({ context, activeProperty }: { context: IdentityC
             <p className="mt-1 font-bold text-emerald-800">{roleLabel}</p>
           </div>
           <nav className="space-y-1 text-sm font-medium">
-            <Nav href="/dashboard" Icon={Home}>
-              Visão geral
-            </Nav>
-            <Nav href="/operations" Icon={Clipboard}>
-              Operações
-            </Nav>
-            <Nav href="#" Icon={Calendar}>
-              Atividades
-            </Nav>
-            <Nav href="#" Icon={CloudRain}>
-              Clima e água
-            </Nav>
-            <Nav href="#" Icon={FileText}>
-              Documentos
-            </Nav>
-            {canManage && (
-              <Nav href="/settings/access" Icon={Users}>
-                Acessos
-              </Nav>
-            )}
-            <Nav href="/settings/profile" Icon={Settings}>
-              Configurações
-            </Nav>
+            <Nav href="/dashboard" Icon={Home}>Visão geral</Nav>
+            <Nav href="/operations" Icon={Clipboard}>Operações</Nav>
+            <Nav href="/structure" Icon={Coffee}>Estrutura rural</Nav>
+            <Nav href="/operations?recordType=chuva" Icon={CloudRain}>Clima e água</Nav>
+            <Nav href="#" Icon={FileText}>Documentos</Nav>
+            {dashboard.canManage && <Nav href="/settings/access" Icon={Users}>Acessos</Nav>}
+            <Nav href="/settings/profile" Icon={Settings}>Configurações</Nav>
           </nav>
         </aside>
 
         <main className="min-w-0 flex-1 px-4 py-7 sm:px-6 lg:py-10">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <section className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <p className="text-sm text-stone-500">
-                  {activeProperty.city} · {activeProperty.state}
-                </p>
-                <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-900 md:hidden">
-                  {roleLabel}
-                </span>
+                <p className="text-sm text-stone-500">{activeProperty.city} · {activeProperty.state}</p>
+                <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-900 md:hidden">{roleLabel}</span>
               </div>
               <h1 className="mt-1 text-3xl font-bold tracking-tight">Olá, {firstName}</h1>
-              <p className="mt-2 text-stone-600">Acompanhe a produção e o manejo de {activeProperty.name}.</p>
+              <p className="mt-2 text-stone-600">Acompanhe {activeProperty.name} e registre o que aconteceu no campo.</p>
             </div>
-            <a
-              href="/operations"
-              className="inline-flex h-12 items-center gap-2 rounded-xl bg-emerald-700 px-6 text-base font-semibold text-white transition hover:bg-emerald-800"
-            >
-              <Plus className="size-5" aria-hidden="true" />
-              Novo registro
-            </a>
-          </div>
-
-          <section className="mt-8 rounded-3xl bg-emerald-900 p-6 text-white shadow-sm sm:p-8">
-            <p className="text-sm font-semibold text-emerald-200">OPERACIONAL</p>
-            <h2 className="mt-2 text-3xl font-bold">Registro de operações por safra e lavoura</h2>
-            <p className="mt-2 max-w-xl text-emerald-100">
-              Use o fluxo de operações para registrar chuva, irrigação, aplicações e observações do dia.
-            </p>
-            <a href="/operations" className="mt-6 inline-flex min-h-11 items-center rounded-xl bg-white px-5 text-sm font-semibold text-stone-800">
-              Ir para operações
-            </a>
+            <div className="flex flex-wrap gap-2">
+              {dashboard.seasonOptions.length > 0 ? (
+                <SeasonSelector seasons={dashboard.seasonOptions} activeId={dashboard.activeSeason?.id ?? null} />
+              ) : (
+                <a href="/structure/seasons" className="inline-flex h-11 items-center rounded-xl border border-stone-200 bg-white px-4 text-sm font-semibold text-emerald-800">
+                  Criar safra
+                </a>
+              )}
+              <a href={dashboard.recommendedAction.href} className="inline-flex h-11 items-center gap-2 rounded-xl bg-emerald-700 px-5 text-sm font-semibold text-white transition hover:bg-emerald-800">
+                <Plus className="size-4" aria-hidden="true" />
+                {dashboard.recommendedAction.label}
+              </a>
+            </div>
           </section>
 
-          <section className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <Card Icon={CloudRain} label="Chuva no mês" value="Sem dados recentes" />
-            <Card Icon={Calendar} label="Próximas atividades" value="Nenhuma" />
-            <Card Icon={Coffee} label="Talhões ativos" value="0" />
-            <Card Icon={FileText} label="Documentos" value="Nenhum pendente" />
+          {!dashboard.canManage && (
+            <SystemAlert tone="warning" className="mt-5">
+              Acesso para consulta: você pode acompanhar a propriedade, mas não criar ou alterar registros operacionais.
+            </SystemAlert>
+          )}
+
+          {dashboard.hasIncompleteStructure && (
+            <SystemAlert tone="info" className="mt-5">
+              {dashboard.recommendedAction.description}
+            </SystemAlert>
+          )}
+
+          <section className="mt-6 rounded-2xl bg-emerald-900 p-5 text-white shadow-sm sm:p-6">
+            <p className="text-sm font-semibold text-emerald-200">PRÓXIMA AÇÃO</p>
+            <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h2 className="text-2xl font-bold">{dashboard.recommendedAction.label}</h2>
+                <p className="mt-1 max-w-xl text-sm text-emerald-100">{dashboard.recommendedAction.description}</p>
+              </div>
+              <a href={dashboard.recommendedAction.href} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-white px-5 text-sm font-semibold text-stone-800">
+                Abrir
+              </a>
+            </div>
           </section>
 
-          <section className="mt-8 rounded-2xl border border-stone-200 bg-white p-6 text-center shadow-sm">
-            <TrendingUp className="mx-auto size-8 text-emerald-700" aria-hidden="true" />
-            <h2 className="mt-3 text-lg font-bold">Seu histórico começa aqui</h2>
-            <p className="mx-auto mt-2 max-w-md text-sm text-stone-500">
-              Cadastre talhões e uma safra para transformar os registros do campo em indicadores úteis.
-            </p>
+          <section className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {dashboard.metrics.map((metric) => <MetricCard key={metric.key} metric={metric} />)}
+          </section>
+
+          <section className="mt-6 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-lg font-bold">Ações rápidas</h2>
+                <p className="text-sm text-stone-500">Comece pelo tipo de registro que o produtor reconhece no campo.</p>
+              </div>
+              <a href="/operations" className="text-sm font-semibold text-emerald-800">Ver operações</a>
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {dashboard.quickActions.map((action) => <QuickAction key={action.key} action={action} />)}
+            </div>
+          </section>
+
+          <section className="mt-6 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-2">
+              <Activity className="size-5 text-emerald-800" aria-hidden="true" />
+              <h2 className="text-lg font-bold">Registros recentes</h2>
+            </div>
+            {dashboard.recentRecords.length ? (
+              <div className="mt-4 divide-y divide-stone-100">
+                {dashboard.recentRecords.map((record) => <RecentRecord key={record.id} record={record} />)}
+              </div>
+            ) : (
+              <div className="mt-4 rounded-xl bg-stone-50 p-4 text-sm text-stone-600">
+                Ainda não há registros nesta propriedade. Use uma ação rápida para começar pelo que aconteceu hoje.
+              </div>
+            )}
           </section>
         </main>
       </div>
@@ -129,14 +158,44 @@ function Nav({ href, Icon, children }: { href: string; Icon: typeof Home; childr
   );
 }
 
-function Card({ Icon, label, value }: { Icon: typeof Home; label: string; value: string }) {
+function MetricCard({ metric }: { metric: DashboardMetric }) {
   return (
     <article className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-      <span className="grid size-10 place-items-center rounded-xl bg-emerald-50 text-emerald-800">
-        <Icon className="size-5" aria-hidden="true" />
-      </span>
-      <p className="mt-4 text-sm text-stone-500">{label}</p>
-      <p className="mt-1 text-xl font-bold">{value}</p>
+      <p className="text-sm text-stone-500">{metric.label}</p>
+      <p className="mt-1 text-2xl font-bold">{metric.value}</p>
+      <p className="mt-2 text-xs text-stone-500">{metric.helper}</p>
     </article>
   );
+}
+
+function QuickAction({ action }: { action: DashboardAction }) {
+  const primary = action.kind === "primary";
+  return (
+    <a
+      href={action.href}
+      className={primary ? "rounded-xl bg-emerald-700 p-4 text-white transition hover:bg-emerald-800" : "rounded-xl border border-stone-200 bg-stone-50 p-4 text-stone-800 transition hover:bg-white"}
+    >
+      <p className="font-bold">{action.label}</p>
+      <p className={primary ? "mt-1 text-sm text-emerald-50" : "mt-1 text-sm text-stone-500"}>{action.description}</p>
+    </a>
+  );
+}
+
+function RecentRecord({ record }: { record: DashboardRecentRecord }) {
+  return (
+    <article className="py-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="font-semibold">{recordTypeLabel[record.record_type] ?? record.record_type}</p>
+        <p className="text-xs text-stone-500">{new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(record.occurred_at))}</p>
+      </div>
+      <p className="mt-1 text-sm text-stone-600">{record.notes || payloadSummary(record.payload) || "Registro operacional sem observação."}</p>
+    </article>
+  );
+}
+
+function payloadSummary(payload: Record<string, unknown> | null) {
+  const value = payload?.value;
+  const unit = payload?.value_unit;
+  if (typeof value === "number") return `${value} ${typeof unit === "string" ? unit : ""}`.trim();
+  return typeof payload?.comment === "string" ? payload.comment : "";
 }

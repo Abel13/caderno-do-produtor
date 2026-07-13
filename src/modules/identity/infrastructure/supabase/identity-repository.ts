@@ -65,6 +65,11 @@ export class IdentityRepository {
     if (error) throwSupabaseError(error);
   }
 
+  async setActiveSeason(seasonId: string | null) {
+    const { error } = await this.supabase.rpc("set_active_season", { target_season_id: seasonId });
+    if (error) throwSupabaseError(error);
+  }
+
   async createInvitation(input: InvitationInput) {
     const { error } = await this.supabase.rpc("create_account_invitation", {
       target_account_id: input.accountId,

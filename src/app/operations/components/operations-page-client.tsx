@@ -270,6 +270,11 @@ export function OperationsPageClient({
           onClose={() => setCreateOpen(false)}
           onSuccess={() => setCreateOpen(false)}
           type="create"
+          initialDefaults={{
+            recordType: searchParams.recordType,
+            seasonId: searchParams.seasonId,
+            plotId: searchParams.plotId,
+          }}
         />
       )}
       {editingRecord && (
@@ -345,6 +350,7 @@ function OperationFormModal({
   propertyId,
   context,
   initialRecord,
+  initialDefaults,
   onClose,
   onSuccess,
 }: {
@@ -352,6 +358,7 @@ function OperationFormModal({
   propertyId: string;
   context: OperationFormContext;
   initialRecord?: OperationalRecordSummary;
+  initialDefaults?: { recordType?: string; seasonId?: string; plotId?: string };
   onClose: () => void;
   onSuccess: () => void;
 }) {
@@ -366,7 +373,7 @@ function OperationFormModal({
   const [clientId] = useState(() => crypto.randomUUID());
 
   const values = state.values ?? {};
-  const [recordType, setRecordType] = useState(values.recordType ?? (initialRecord ? initialRecord.record_type : context.recordTypes[0]?.code));
+  const [recordType, setRecordType] = useState(values.recordType ?? (initialRecord ? initialRecord.record_type : initialDefaults?.recordType ?? context.recordTypes[0]?.code));
   const selectedType = context.recordTypes.find((item) => item.code === recordType) ?? context.recordTypes[0];
 
   const availablePlantings = context.plantings;
@@ -433,7 +440,7 @@ function OperationFormModal({
             </label>
             <label className="block text-sm font-semibold">
               Talhão (opcional)
-              <select name="plotId" defaultValue={values.plotId ?? initialRecord?.plot_id ?? ""} className="mt-1 h-11 w-full rounded-xl border border-stone-300">
+              <select name="plotId" defaultValue={values.plotId ?? initialRecord?.plot_id ?? initialDefaults?.plotId ?? ""} className="mt-1 h-11 w-full rounded-xl border border-stone-300">
                 <option value="">Sem talhão</option>
                 {context.plots.map((plot) => (
                   <option key={plot.id} value={plot.id}>
@@ -458,7 +465,7 @@ function OperationFormModal({
             </label>
             <label className="block text-sm font-semibold">
               Safra (opcional)
-              <select name="seasonId" defaultValue={values.seasonId ?? initialRecord?.season_id ?? ""} className="mt-1 h-11 w-full rounded-xl border border-stone-300">
+              <select name="seasonId" defaultValue={values.seasonId ?? initialRecord?.season_id ?? initialDefaults?.seasonId ?? ""} className="mt-1 h-11 w-full rounded-xl border border-stone-300">
                 <option value="">Sem safra</option>
                 {context.seasons
                   .filter((season) => season.status !== "closed")

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { completeProducerOnboarding, createAccountInvitation, revokeAccountInvitation, revokeMembership, setActiveProperty, signOut, updateProfile } from "../application/use-cases";
+import { completeProducerOnboarding, createAccountInvitation, revokeAccountInvitation, revokeMembership, setActiveProperty, setActiveSeason, signOut, updateProfile } from "../application/use-cases";
 import { invitationSchema, onboardingSchema, profileSchema } from "../domain/schemas";
 import { getIdentityRepository, requireIdentityContext, requireUser } from "../infrastructure/supabase/server-context";
 import type { ActionState } from "./action-state";
@@ -24,6 +24,14 @@ export async function setActivePropertyAction(formData: FormData) {
   const propertyId = String(formData.get("propertyId") ?? "");
   const repository = await getIdentityRepository();
   await setActiveProperty(repository, propertyId);
+  revalidatePath("/dashboard");
+  redirect("/dashboard");
+}
+
+export async function setActiveSeasonAction(formData: FormData) {
+  const seasonId = String(formData.get("seasonId") ?? "");
+  const repository = await getIdentityRepository();
+  await setActiveSeason(repository, seasonId || null);
   revalidatePath("/dashboard");
   redirect("/dashboard");
 }

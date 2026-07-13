@@ -5,6 +5,7 @@ export interface IdentityProfile {
   full_name: string | null;
   avatar_url: string | null;
   last_property_id: string | null;
+  last_season_id: string | null;
   timezone: BrazilianTimezone;
   measurement_system: "metric";
   internal_notifications_enabled: boolean;

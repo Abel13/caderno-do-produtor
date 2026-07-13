@@ -161,13 +161,13 @@ Entregar a experiência central de navegação da solução.
 - Dashboard contextual por conta, propriedade e safra.
 - Resumo de talhões e áreas.
 - Atividades e registros recentes.
-- Recomendações e tarefas pendentes.
-- Documentos aguardando revisão.
+- Próxima ação recomendada com base em estrutura rural e registros operacionais.
+- Documentos aguardando revisão quando a etapa de documentos estiver disponível.
 - Cards condicionais que aparecem quando há dados.
 - Estados vazios com orientação para iniciar um controle.
 - Botão global “Novo registro”.
-- Busca por intenção: chuva, aplicação, despesa, colheita, observação etc.
-- Atalhos configuráveis.
+- Atalhos por intenção: chuva, irrigação, aplicação, observação e monitoramento.
+- Atalhos configuráveis como evolução posterior.
 - Preenchimento iniciado a partir da propriedade, talhão, alerta ou recomendação.
 - Layout móvel, tablet e desktop.
 - Preferências do usuário para dashboard e atalhos.
@@ -178,7 +178,7 @@ Entregar a experiência central de navegação da solução.
 
 ### Critério de conclusão
 
-O usuário encontra informações essenciais na página inicial e inicia qualquer preenchimento disponível sem navegar por estruturas complexas.
+O usuário encontra informações essenciais na página inicial e inicia os preenchimentos disponíveis sem navegar por estruturas complexas. Indicadores avançados e gráficos ficam vinculados aos módulos específicos a partir da etapa 5.
 
 ## 9. Etapa 5 — Clima e água
 
