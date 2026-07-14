@@ -99,6 +99,30 @@ export interface SoilCorrectionRecord {
   };
 }
 
+export interface SoilFertilizationRecord {
+  id: string;
+  operational_record_id: string;
+  property_id: string;
+  plot_id: string;
+  planting_id: string | null;
+  season_id: string | null;
+  soil_analysis_id: string | null;
+  applied_on: string;
+  fertilizer_name: string;
+  dose_kg_ha: string | null;
+  total_quantity_kg: string;
+  coverage_label: string | null;
+  labor_type: "hh" | "hm" | null;
+  labor_quantity: string | null;
+  fuel_l: string | null;
+  responsible_name: string | null;
+  notes: string | null;
+  operational_record: {
+    status: "draft" | "confirmed" | "cancelled" | "review_required";
+    deleted_at: string | null;
+  };
+}
+
 export interface SoilSummary {
   analysesCount: number;
   reportsCount: number;
@@ -108,5 +132,11 @@ export interface SoilSummary {
 export interface SoilCorrectionSummary {
   correctionsCount: number;
   totalQuantityT: string;
+  latestAppliedOn: string | null;
+}
+
+export interface SoilFertilizationSummary {
+  fertilizationsCount: number;
+  totalQuantityKg: string;
   latestAppliedOn: string | null;
 }

@@ -227,12 +227,13 @@ O produtor consegue registrar e analisar a disponibilidade de água por propried
 - Subetapa 6A: ficha digital de Controle de Análises de Solo, com preenchimento manual, laudo original anexado e histórico por talhão/profundidade.
 - Subetapa 6A.2: importação assistida de PDF/OCR de laudos, com revisão humana antes de gravar dados definitivos.
 - Subetapa 6B: ficha digital de Controle de Correção do Solo, registrando corretivo utilizado, PRNT, dose informada, quantidade total, hh/hm, combustível, responsável e observações, com vínculo opcional à análise de solo.
+- Subetapa 6C: ficha digital de Controle de Adubação via Solo, registrando insumo, dose em kg/ha, quantidade em kg/talhão, cobertura/parcela, hh/hm, combustível, responsável e observações.
 - Coletas, profundidades, pontos e laboratórios.
 - Laudos, parâmetros, unidades e métodos de análise.
 - Faixas de referência configuráveis.
 - Recomendação agronômica de correção do solo fica para evolução posterior; nesta etapa a correção é apenas o registro da ficha preenchida pelo produtor.
 - Cadastro de insumos, formulações e nutrientes.
-- Planejamento, parcelamento e execução das adubações.
+- Planejamento e recomendações de adubação ficam para evolução posterior; nesta etapa a adubação via solo é apenas o registro realizado da ficha.
 - Misturas e componentes de aplicação.
 - Dose recomendada, dose aplicada, área e quantidade total.
 - Custos e integração financeira controlada.

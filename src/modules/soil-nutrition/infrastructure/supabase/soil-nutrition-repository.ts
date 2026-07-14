@@ -1,12 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { throwSupabaseError } from "@/modules/identity/infrastructure/supabase/identity-repository";
-import type { SoilAnalysisFilterInput, SoilAnalysisInput, SoilCorrectionFilterInput, SoilCorrectionInput } from "../../domain/schemas";
-import type { SoilAnalysisAttachment, SoilAnalysisRecord, SoilCorrectionRecord, SoilFormContext } from "../../domain/types";
+import type { SoilAnalysisFilterInput, SoilAnalysisInput, SoilCorrectionFilterInput, SoilCorrectionInput, SoilFertilizationFilterInput, SoilFertilizationInput } from "../../domain/schemas";
+import type { SoilAnalysisAttachment, SoilAnalysisRecord, SoilCorrectionRecord, SoilFertilizationRecord, SoilFormContext } from "../../domain/types";
 
 type OperationalRecordRef = SoilAnalysisRecord["operational_record"] | SoilAnalysisRecord["operational_record"][] | null;
 type RawSoilAnalysisRecord = Omit<SoilAnalysisRecord, "operational_record" | "attachments"> & { operational_records: OperationalRecordRef };
 type RawSoilCorrectionRecord = Omit<SoilCorrectionRecord, "operational_record"> & { operational_records: SoilCorrectionRecord["operational_record"] | SoilCorrectionRecord["operational_record"][] | null };
+type RawSoilFertilizationRecord = Omit<SoilFertilizationRecord, "operational_record"> & { operational_records: SoilFertilizationRecord["operational_record"] | SoilFertilizationRecord["operational_record"][] | null };
 
 const parameterKeys = [
   "phWater", "phCacl2", "phKcl", "pMgDm3", "kMgDm3", "caCmolcDm3", "mgCmolcDm3", "alCmolcDm3", "hAlCmolcDm3",
@@ -298,6 +299,89 @@ export class SoilNutritionRepository {
 
   async restoreCorrection(correctionId: string) {
     const { error } = await this.supabase.rpc("restore_soil_correction_record", { target_correction_id: correctionId, target_notes: null });
+    if (error) throwSupabaseError(error);
+  }
+
+  async listFertilizations(filters: SoilFertilizationFilterInput): Promise<SoilFertilizationRecord[]> {
+    let query = this.supabase
+      .from("soil_fertilization_records")
+      .select("id,operational_record_id,property_id,plot_id,planting_id,season_id,soil_analysis_id,applied_on,fertilizer_name,dose_kg_ha,total_quantity_kg,coverage_label,labor_type,labor_quantity,fuel_l,responsible_name,notes,operational_records!inner(status,deleted_at)")
+      .eq("property_id", filters.propertyId)
+      .order("applied_on", { ascending: false })
+      .limit(80);
+    if (filters.plotId) query = query.eq("plot_id", filters.plotId);
+    if (filters.plantingId) query = query.eq("planting_id", filters.plantingId);
+    if (filters.seasonId) query = query.eq("season_id", filters.seasonId);
+    if (filters.soilAnalysisId) query = query.eq("soil_analysis_id", filters.soilAnalysisId);
+    if (filters.fertilizerName) query = query.ilike("fertilizer_name", `%${filters.fertilizerName}%`);
+    if (filters.from) query = query.gte("applied_on", filters.from);
+    if (filters.to) query = query.lte("applied_on", filters.to);
+    if (!filters.showDeleted) query = query.is("operational_records.deleted_at", null);
+    const { data, error } = await query;
+    if (error) throwSupabaseError(error);
+    return ((data ?? []) as unknown as RawSoilFertilizationRecord[]).map((item) => {
+      const operationalRecord = Array.isArray(item.operational_records) ? item.operational_records[0] : item.operational_records;
+      return {
+        ...item,
+        dose_kg_ha: normalizeDecimal(item.dose_kg_ha),
+        total_quantity_kg: String(item.total_quantity_kg),
+        labor_quantity: normalizeDecimal(item.labor_quantity),
+        fuel_l: normalizeDecimal(item.fuel_l),
+        operational_record: operationalRecord ?? { status: "confirmed", deleted_at: null },
+      };
+    });
+  }
+
+  async createFertilization(input: SoilFertilizationInput) {
+    const { error } = await this.supabase.rpc("create_soil_fertilization_record", {
+      target_property_id: input.propertyId,
+      target_plot_id: input.plotId,
+      target_planting_id: input.plantingId,
+      target_season_id: input.seasonId,
+      target_soil_analysis_id: input.soilAnalysisId,
+      target_applied_on: input.appliedOn,
+      target_fertilizer_name: input.fertilizerName,
+      target_dose_kg_ha: input.doseKgHa,
+      target_total_quantity_kg: input.totalQuantityKg,
+      target_coverage_label: input.coverageLabel,
+      target_labor_type: input.laborType,
+      target_labor_quantity: input.laborQuantity,
+      target_fuel_l: input.fuelL,
+      target_responsible_name: input.responsibleName,
+      target_notes: input.notes,
+      target_client_id: input.clientId ?? crypto.randomUUID(),
+    });
+    if (error) throwSupabaseError(error);
+  }
+
+  async updateFertilization(input: SoilFertilizationInput) {
+    const { error } = await this.supabase.rpc("update_soil_fertilization_record", {
+      target_fertilization_id: input.fertilizationId,
+      target_plot_id: input.plotId,
+      target_planting_id: input.plantingId,
+      target_season_id: input.seasonId,
+      target_soil_analysis_id: input.soilAnalysisId,
+      target_applied_on: input.appliedOn,
+      target_fertilizer_name: input.fertilizerName,
+      target_dose_kg_ha: input.doseKgHa,
+      target_total_quantity_kg: input.totalQuantityKg,
+      target_coverage_label: input.coverageLabel,
+      target_labor_type: input.laborType,
+      target_labor_quantity: input.laborQuantity,
+      target_fuel_l: input.fuelL,
+      target_responsible_name: input.responsibleName,
+      target_notes: input.notes,
+    });
+    if (error) throwSupabaseError(error);
+  }
+
+  async deleteFertilization(fertilizationId: string) {
+    const { error } = await this.supabase.rpc("delete_soil_fertilization_record", { target_fertilization_id: fertilizationId });
+    if (error) throwSupabaseError(error);
+  }
+
+  async restoreFertilization(fertilizationId: string) {
+    const { error } = await this.supabase.rpc("restore_soil_fertilization_record", { target_fertilization_id: fertilizationId, target_notes: null });
     if (error) throwSupabaseError(error);
   }
 

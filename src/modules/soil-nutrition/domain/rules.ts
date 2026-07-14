@@ -1,4 +1,4 @@
-import type { SoilAnalysisRecord, SoilCorrectionRecord, SoilCorrectionSummary, SoilSummary } from "./types";
+import type { SoilAnalysisRecord, SoilCorrectionRecord, SoilCorrectionSummary, SoilFertilizationRecord, SoilFertilizationSummary, SoilSummary } from "./types";
 
 export function formatSoilDecimal(value: string | number | null | undefined, maximumFractionDigits = 3) {
   if (value === null || value === undefined || value === "") return "—";
@@ -31,6 +31,20 @@ export function summarizeSoilCorrections(records: SoilCorrectionRecord[]): SoilC
   return {
     correctionsCount: active.length,
     totalQuantityT: String(active.reduce((total, record) => total + Number(record.total_quantity_t ?? 0), 0)),
+    latestAppliedOn: active[0]?.applied_on ?? null,
+  };
+}
+
+export function calculateSoilFertilizationTotal(plotAreaHa: number | null, doseKgHa: number | null) {
+  if (!plotAreaHa || plotAreaHa <= 0 || doseKgHa === null || doseKgHa < 0) return null;
+  return Number((plotAreaHa * doseKgHa).toFixed(3));
+}
+
+export function summarizeSoilFertilizations(records: SoilFertilizationRecord[]): SoilFertilizationSummary {
+  const active = records.filter((record) => !record.operational_record.deleted_at);
+  return {
+    fertilizationsCount: active.length,
+    totalQuantityKg: String(active.reduce((total, record) => total + Number(record.total_quantity_kg ?? 0), 0)),
     latestAppliedOn: active[0]?.applied_on ?? null,
   };
 }

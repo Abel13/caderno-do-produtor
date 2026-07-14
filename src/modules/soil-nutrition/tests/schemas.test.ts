@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { calculateCorrectionTotal, formatSoilDecimal, soilAnalysisStatusLabel, summarizeSoilAnalyses, summarizeSoilCorrections } from "../domain/rules";
-import { soilAnalysisSchema, soilCorrectionSchema } from "../domain/schemas";
+import { calculateCorrectionTotal, calculateSoilFertilizationTotal, formatSoilDecimal, soilAnalysisStatusLabel, summarizeSoilAnalyses, summarizeSoilCorrections, summarizeSoilFertilizations } from "../domain/rules";
+import { soilAnalysisSchema, soilCorrectionSchema, soilFertilizationSchema } from "../domain/schemas";
 
 const uuid = "11111111-1111-4111-8111-111111111111";
 
@@ -182,6 +182,98 @@ describe("soil nutrition schemas", () => {
 
     expect(summary.correctionsCount).toBe(1);
     expect(summary.totalQuantityT).toBe("12");
+    expect(summary.latestAppliedOn).toBe("2026-07-10");
+  });
+
+  it("valida ficha de adubação via solo com números brasileiros", () => {
+    const result = soilFertilizationSchema.parse({
+      propertyId: uuid,
+      plotId: uuid,
+      plantingId: "",
+      seasonId: "",
+      soilAnalysisId: "",
+      appliedOn: "2026-07-10",
+      fertilizerName: "20-05-20",
+      doseKgHa: "250,5",
+      totalQuantityKg: "2375,75",
+      coverageLabel: "1ª cobertura",
+      laborType: "hh",
+      laborQuantity: "3,5",
+      fuelL: "12",
+      responsibleName: "Alex",
+      notes: "Linha da ficha do caderno.",
+    });
+
+    expect(result.plantingId).toBeNull();
+    expect(result.soilAnalysisId).toBeNull();
+    expect(result.doseKgHa).toBe(250.5);
+    expect(result.totalQuantityKg).toBe(2375.75);
+    expect(result.coverageLabel).toBe("1ª cobertura");
+    expect(result.laborType).toBe("hh");
+  });
+
+  it("bloqueia quantidade e hh/hm inválidos na adubação via solo", () => {
+    const result = soilFertilizationSchema.safeParse({
+      propertyId: uuid,
+      plotId: uuid,
+      appliedOn: "2026-07-10",
+      fertilizerName: "20-05-20",
+      doseKgHa: "-1",
+      totalQuantityKg: "-10",
+      laborQuantity: "3",
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("calcula quantidade total auxiliar e resume adubações ativas", () => {
+    expect(calculateSoilFertilizationTotal(9.5, 250)).toBe(2375);
+
+    const summary = summarizeSoilFertilizations([
+      {
+        id: "1",
+        operational_record_id: "op",
+        property_id: "p",
+        plot_id: "plot",
+        planting_id: null,
+        season_id: null,
+        soil_analysis_id: null,
+        applied_on: "2026-07-10",
+        fertilizer_name: "20-05-20",
+        dose_kg_ha: "250",
+        total_quantity_kg: "2375",
+        coverage_label: "1ª cobertura",
+        labor_type: "hh",
+        labor_quantity: "3",
+        fuel_l: "12",
+        responsible_name: "Alex",
+        notes: null,
+        operational_record: { status: "confirmed", deleted_at: null },
+      },
+      {
+        id: "2",
+        operational_record_id: "op2",
+        property_id: "p",
+        plot_id: "plot",
+        planting_id: null,
+        season_id: null,
+        soil_analysis_id: null,
+        applied_on: "2026-07-11",
+        fertilizer_name: "Orgânico",
+        dose_kg_ha: null,
+        total_quantity_kg: "1000",
+        coverage_label: null,
+        labor_type: null,
+        labor_quantity: null,
+        fuel_l: null,
+        responsible_name: null,
+        notes: null,
+        operational_record: { status: "confirmed", deleted_at: "2026-12-01T00:00:00Z" },
+      },
+    ]);
+
+    expect(summary.fertilizationsCount).toBe(1);
+    expect(summary.totalQuantityKg).toBe("2375");
     expect(summary.latestAppliedOn).toBe("2026-07-10");
   });
 });

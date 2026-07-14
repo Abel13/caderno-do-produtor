@@ -2,7 +2,7 @@ import { ZodError } from "zod";
 import type { SoilActionState } from "./action-state";
 
 const messages: Record<string, string> = {
-  permission_denied: "Seu usuário não tem permissão para alterar análises de solo desta propriedade.",
+  permission_denied: "Seu usuário não tem permissão para alterar fichas de solo desta propriedade.",
   soil_analysis_not_found: "Análise de solo não encontrada.",
   soil_analysis_deleted: "Esta análise de solo está apagada logicamente.",
   operational_record_deleted: "Este registro está apagado logicamente. Restaure antes de editar.",
@@ -17,6 +17,10 @@ const messages: Record<string, string> = {
   soil_correction_context_mismatch: "Talhão, lavoura, safra ou análise de solo não pertencem à propriedade ativa.",
   soil_correction_invalid_quantity: "Revise dose, quantidade, hh/hm, combustível e corretivo utilizado.",
   soil_correction_invalid_prnt: "O PRNT deve ser maior que zero e no máximo 200%.",
+  soil_fertilization_not_found: "Adubação via solo não encontrada.",
+  soil_fertilization_deleted: "Esta adubação via solo está apagada logicamente.",
+  soil_fertilization_context_mismatch: "Talhão, lavoura, safra ou análise de solo não pertencem à propriedade ativa.",
+  soil_fertilization_invalid_quantity: "Revise dose, quantidade, hh/hm, combustível e nome do insumo.",
 };
 
 function codeFromError(error: unknown) {

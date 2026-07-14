@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
-import { soilAnalysisSchema, soilCorrectionSchema } from "../domain/schemas";
+import { soilAnalysisSchema, soilCorrectionSchema, soilFertilizationSchema } from "../domain/schemas";
 import { SoilNutritionRepository } from "../infrastructure/supabase/soil-nutrition-repository";
 import { soilErrorState } from "./action-errors";
 import type { SoilActionState } from "./action-state";
@@ -23,8 +23,51 @@ function revalidateSoil() {
   revalidatePath("/soil");
   revalidatePath("/soil/analyses");
   revalidatePath("/soil/corrections");
+  revalidatePath("/soil/soil-fertilizations");
   revalidatePath("/dashboard");
   revalidatePath("/operations");
+}
+
+export async function createSoilFertilizationAction(_: SoilActionState, formData: FormData): Promise<SoilActionState> {
+  try {
+    const input = soilFertilizationSchema.parse(readSoilFertilizationForm(formData));
+    await (await repository()).createFertilization(input);
+    revalidateSoil();
+    return { status: "success", message: "Adubação via solo registrada com sucesso." };
+  } catch (error) {
+    return { ...soilErrorState(error), values: valuesOf(formData) };
+  }
+}
+
+export async function updateSoilFertilizationAction(_: SoilActionState, formData: FormData): Promise<SoilActionState> {
+  try {
+    const input = soilFertilizationSchema.parse(readSoilFertilizationForm(formData));
+    await (await repository()).updateFertilization(input);
+    revalidateSoil();
+    return { status: "success", message: "Adubação via solo atualizada." };
+  } catch (error) {
+    return { ...soilErrorState(error), values: valuesOf(formData) };
+  }
+}
+
+export async function deleteSoilFertilizationAction(_: SoilActionState, formData: FormData): Promise<SoilActionState> {
+  try {
+    await (await repository()).deleteFertilization(String(formData.get("fertilizationId") ?? ""));
+    revalidateSoil();
+    return { status: "success", message: "Adubação apagada logicamente. Ela permanece no histórico." };
+  } catch (error) {
+    return soilErrorState(error);
+  }
+}
+
+export async function restoreSoilFertilizationAction(_: SoilActionState, formData: FormData): Promise<SoilActionState> {
+  try {
+    await (await repository()).restoreFertilization(String(formData.get("fertilizationId") ?? ""));
+    revalidateSoil();
+    return { status: "success", message: "Adubação restaurada." };
+  } catch (error) {
+    return soilErrorState(error);
+  }
 }
 
 export async function createSoilCorrectionAction(_: SoilActionState, formData: FormData): Promise<SoilActionState> {
@@ -183,6 +226,28 @@ function readSoilCorrectionForm(formData: FormData) {
     prntPct: formData.get("prntPct"),
     recommendedDoseTHa: formData.get("recommendedDoseTHa"),
     totalQuantityT: formData.get("totalQuantityT"),
+    laborType: formData.get("laborType"),
+    laborQuantity: formData.get("laborQuantity"),
+    fuelL: formData.get("fuelL"),
+    responsibleName: formData.get("responsibleName"),
+    notes: formData.get("notes"),
+    clientId: formData.get("clientId"),
+  };
+}
+
+function readSoilFertilizationForm(formData: FormData) {
+  return {
+    propertyId: formData.get("propertyId"),
+    fertilizationId: formData.get("fertilizationId"),
+    plotId: formData.get("plotId"),
+    plantingId: formData.get("plantingId"),
+    seasonId: formData.get("seasonId"),
+    soilAnalysisId: formData.get("soilAnalysisId"),
+    appliedOn: formData.get("appliedOn"),
+    fertilizerName: formData.get("fertilizerName"),
+    doseKgHa: formData.get("doseKgHa"),
+    totalQuantityKg: formData.get("totalQuantityKg"),
+    coverageLabel: formData.get("coverageLabel"),
     laborType: formData.get("laborType"),
     laborQuantity: formData.get("laborQuantity"),
     fuelL: formData.get("fuelL"),
