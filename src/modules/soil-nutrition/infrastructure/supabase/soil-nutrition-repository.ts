@@ -1,13 +1,14 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { throwSupabaseError } from "@/modules/identity/infrastructure/supabase/identity-repository";
-import type { SoilAnalysisFilterInput, SoilAnalysisInput, SoilCorrectionFilterInput, SoilCorrectionInput, SoilFertilizationFilterInput, SoilFertilizationInput } from "../../domain/schemas";
-import type { SoilAnalysisAttachment, SoilAnalysisRecord, SoilCorrectionRecord, SoilFertilizationRecord, SoilFormContext } from "../../domain/types";
+import type { FoliarFertilizationFilterInput, FoliarFertilizationInput, SoilAnalysisFilterInput, SoilAnalysisInput, SoilCorrectionFilterInput, SoilCorrectionInput, SoilFertilizationFilterInput, SoilFertilizationInput } from "../../domain/schemas";
+import type { FoliarFertilizationComponent, FoliarFertilizationRecord, SoilAnalysisAttachment, SoilAnalysisRecord, SoilCorrectionRecord, SoilFertilizationRecord, SoilFormContext } from "../../domain/types";
 
 type OperationalRecordRef = SoilAnalysisRecord["operational_record"] | SoilAnalysisRecord["operational_record"][] | null;
 type RawSoilAnalysisRecord = Omit<SoilAnalysisRecord, "operational_record" | "attachments"> & { operational_records: OperationalRecordRef };
 type RawSoilCorrectionRecord = Omit<SoilCorrectionRecord, "operational_record"> & { operational_records: SoilCorrectionRecord["operational_record"] | SoilCorrectionRecord["operational_record"][] | null };
 type RawSoilFertilizationRecord = Omit<SoilFertilizationRecord, "operational_record"> & { operational_records: SoilFertilizationRecord["operational_record"] | SoilFertilizationRecord["operational_record"][] | null };
+type RawFoliarFertilizationRecord = Omit<FoliarFertilizationRecord, "operational_record" | "components"> & { operational_records: FoliarFertilizationRecord["operational_record"] | FoliarFertilizationRecord["operational_record"][] | null };
 
 const parameterKeys = [
   "phWater", "phCacl2", "phKcl", "pMgDm3", "kMgDm3", "caCmolcDm3", "mgCmolcDm3", "alCmolcDm3", "hAlCmolcDm3",
@@ -50,6 +51,17 @@ function normalizeDecimal(value: string | number | null) {
 
 function parametersPayload(input: SoilAnalysisInput) {
   return Object.fromEntries(parameterKeys.map((key) => [dbKeyByInputKey[key], input[key]]));
+}
+
+function foliarComponentsPayload(input: FoliarFertilizationInput) {
+  return input.components.map((component, index) => ({
+    position: index + 1,
+    product_name: component.productName,
+    dose_value: component.doseValue,
+    dose_unit: component.doseUnit,
+    total_quantity: component.totalQuantity,
+    notes: component.notes,
+  }));
 }
 
 function safeFilename(name: string) {
@@ -383,6 +395,122 @@ export class SoilNutritionRepository {
   async restoreFertilization(fertilizationId: string) {
     const { error } = await this.supabase.rpc("restore_soil_fertilization_record", { target_fertilization_id: fertilizationId, target_notes: null });
     if (error) throwSupabaseError(error);
+  }
+
+  async listFoliarFertilizations(filters: FoliarFertilizationFilterInput): Promise<FoliarFertilizationRecord[]> {
+    let query = this.supabase
+      .from("foliar_fertilization_records")
+      .select("id,operational_record_id,property_id,plot_id,planting_id,season_id,applied_on,purpose,spray_volume_l_ha,temperature_c,humidity_pct,wind_speed_km_h,weather_notes,labor_type,labor_quantity,fuel_l,responsible_name,notes,operational_records!inner(status,deleted_at)")
+      .eq("property_id", filters.propertyId)
+      .order("applied_on", { ascending: false })
+      .limit(80);
+    if (filters.plotId) query = query.eq("plot_id", filters.plotId);
+    if (filters.plantingId) query = query.eq("planting_id", filters.plantingId);
+    if (filters.seasonId) query = query.eq("season_id", filters.seasonId);
+    if (filters.purpose) query = query.ilike("purpose", `%${filters.purpose}%`);
+    if (filters.from) query = query.gte("applied_on", filters.from);
+    if (filters.to) query = query.lte("applied_on", filters.to);
+    if (!filters.showDeleted) query = query.is("operational_records.deleted_at", null);
+    const { data, error } = await query;
+    if (error) throwSupabaseError(error);
+    const rows = (data ?? []) as unknown as RawFoliarFertilizationRecord[];
+    const componentsByRecord = await this.listFoliarComponents(rows.map((item) => item.id));
+    return rows
+      .filter((item) => !filters.productName || (componentsByRecord[item.id] ?? []).some((component) => component.product_name.toLowerCase().includes(filters.productName!.toLowerCase())))
+      .map((item) => {
+        const operationalRecord = Array.isArray(item.operational_records) ? item.operational_records[0] : item.operational_records;
+        return {
+          ...item,
+          spray_volume_l_ha: normalizeDecimal(item.spray_volume_l_ha),
+          temperature_c: normalizeDecimal(item.temperature_c),
+          humidity_pct: normalizeDecimal(item.humidity_pct),
+          wind_speed_km_h: normalizeDecimal(item.wind_speed_km_h),
+          labor_quantity: normalizeDecimal(item.labor_quantity),
+          fuel_l: normalizeDecimal(item.fuel_l),
+          components: componentsByRecord[item.id] ?? [],
+          operational_record: operationalRecord ?? { status: "confirmed", deleted_at: null },
+        };
+      });
+  }
+
+  async createFoliarFertilization(input: FoliarFertilizationInput) {
+    const { error } = await this.supabase.rpc("create_foliar_fertilization_record", {
+      target_property_id: input.propertyId,
+      target_plot_id: input.plotId,
+      target_planting_id: input.plantingId,
+      target_season_id: input.seasonId,
+      target_applied_on: input.appliedOn,
+      target_purpose: input.purpose,
+      target_spray_volume_l_ha: input.sprayVolumeLHa,
+      target_temperature_c: input.temperatureC,
+      target_humidity_pct: input.humidityPct,
+      target_wind_speed_km_h: input.windSpeedKmH,
+      target_weather_notes: input.weatherNotes,
+      target_labor_type: input.laborType,
+      target_labor_quantity: input.laborQuantity,
+      target_fuel_l: input.fuelL,
+      target_responsible_name: input.responsibleName,
+      target_notes: input.notes,
+      target_components: foliarComponentsPayload(input),
+      target_client_id: input.clientId ?? crypto.randomUUID(),
+    });
+    if (error) throwSupabaseError(error);
+  }
+
+  async updateFoliarFertilization(input: FoliarFertilizationInput) {
+    const { error } = await this.supabase.rpc("update_foliar_fertilization_record", {
+      target_foliar_fertilization_id: input.foliarFertilizationId,
+      target_plot_id: input.plotId,
+      target_planting_id: input.plantingId,
+      target_season_id: input.seasonId,
+      target_applied_on: input.appliedOn,
+      target_purpose: input.purpose,
+      target_spray_volume_l_ha: input.sprayVolumeLHa,
+      target_temperature_c: input.temperatureC,
+      target_humidity_pct: input.humidityPct,
+      target_wind_speed_km_h: input.windSpeedKmH,
+      target_weather_notes: input.weatherNotes,
+      target_labor_type: input.laborType,
+      target_labor_quantity: input.laborQuantity,
+      target_fuel_l: input.fuelL,
+      target_responsible_name: input.responsibleName,
+      target_notes: input.notes,
+      target_components: foliarComponentsPayload(input),
+    });
+    if (error) throwSupabaseError(error);
+  }
+
+  async deleteFoliarFertilization(foliarFertilizationId: string) {
+    const { error } = await this.supabase.rpc("delete_foliar_fertilization_record", { target_foliar_fertilization_id: foliarFertilizationId });
+    if (error) throwSupabaseError(error);
+  }
+
+  async restoreFoliarFertilization(foliarFertilizationId: string) {
+    const { error } = await this.supabase.rpc("restore_foliar_fertilization_record", { target_foliar_fertilization_id: foliarFertilizationId, target_notes: null });
+    if (error) throwSupabaseError(error);
+  }
+
+  private async listFoliarComponents(recordIds: string[]) {
+    if (recordIds.length === 0) return {};
+    const { data, error } = await this.supabase
+      .from("foliar_fertilization_components")
+      .select("id,foliar_fertilization_id,product_name,dose_value,dose_unit,total_quantity,notes")
+      .in("foliar_fertilization_id", recordIds)
+      .order("position");
+    if (error) throwSupabaseError(error);
+    return (data ?? []).reduce<Record<string, FoliarFertilizationComponent[]>>((acc, item) => {
+      const recordId = item.foliar_fertilization_id as string;
+      acc[recordId] ??= [];
+      acc[recordId].push({
+        id: item.id as string,
+        product_name: item.product_name as string,
+        dose_value: String(item.dose_value),
+        dose_unit: item.dose_unit as string,
+        total_quantity: normalizeDecimal(item.total_quantity as string | number | null),
+        notes: item.notes as string | null,
+      });
+      return acc;
+    }, {});
   }
 
   private async listAttachmentsByOperationalRecord(opIds: string[]) {

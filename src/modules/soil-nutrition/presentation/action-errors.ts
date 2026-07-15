@@ -21,6 +21,10 @@ const messages: Record<string, string> = {
   soil_fertilization_deleted: "Esta adubação via solo está apagada logicamente.",
   soil_fertilization_context_mismatch: "Talhão, lavoura, safra ou análise de solo não pertencem à propriedade ativa.",
   soil_fertilization_invalid_quantity: "Revise dose, quantidade, hh/hm, combustível e nome do insumo.",
+  foliar_fertilization_not_found: "Adubação via folha não encontrada.",
+  foliar_fertilization_context_mismatch: "Talhão, lavoura ou safra não pertencem à propriedade ativa.",
+  foliar_fertilization_invalid_values: "Revise finalidade, clima, volume de calda, hh/hm e combustível.",
+  foliar_fertilization_invalid_components: "Informe ao menos um componente válido da mistura.",
 };
 
 function codeFromError(error: unknown) {

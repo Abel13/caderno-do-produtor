@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { canManageAccount, chooseActiveProperty } from "@/modules/identity/domain/permissions";
 import { requireIdentityContext } from "@/modules/identity/infrastructure/supabase/server-context";
 import { SoilNutritionRepository } from "@/modules/soil-nutrition/infrastructure/supabase/soil-nutrition-repository";
-import { formatSoilDecimal, summarizeSoilAnalyses, summarizeSoilCorrections, summarizeSoilFertilizations } from "@/modules/soil-nutrition/domain/rules";
+import { formatSoilDecimal, summarizeFoliarFertilizations, summarizeSoilAnalyses, summarizeSoilCorrections, summarizeSoilFertilizations } from "@/modules/soil-nutrition/domain/rules";
 
 export default async function SoilPage() {
   const { context } = await requireIdentityContext();
@@ -11,14 +11,16 @@ export default async function SoilPage() {
   if (!property) return <main className="p-8">Nenhuma propriedade ativa encontrada.</main>;
   const membership = context.memberships.find((item) => item.account_id === property.account_id);
   const repository = new SoilNutritionRepository(await createClient());
-  const [analyses, corrections, fertilizations] = await Promise.all([
+  const [analyses, corrections, fertilizations, foliarFertilizations] = await Promise.all([
     repository.listAnalyses({ propertyId: property.id, showDeleted: false }),
     repository.listCorrections({ propertyId: property.id, showDeleted: false }),
     repository.listFertilizations({ propertyId: property.id, showDeleted: false }),
+    repository.listFoliarFertilizations({ propertyId: property.id, showDeleted: false }),
   ]);
   const summary = summarizeSoilAnalyses(analyses);
   const correctionSummary = summarizeSoilCorrections(corrections);
   const fertilizationSummary = summarizeSoilFertilizations(fertilizations);
+  const foliarSummary = summarizeFoliarFertilizations(foliarFertilizations);
   const canManage = canManageAccount(membership?.role ?? "viewer");
 
   return (
@@ -32,7 +34,7 @@ export default async function SoilPage() {
           <p className="text-sm font-semibold text-emerald-100">SOLO E NUTRIÇÃO</p>
           <h1 className="mt-1 text-3xl font-bold">Fichas de solo</h1>
           <p className="mt-2 max-w-2xl text-sm text-emerald-50">
-            Preencha análises, correções e adubações via solo como fichas do caderno, com histórico por talhão e safra.
+            Preencha análises, correções, adubações via solo e adubações via folha como fichas do caderno, com histórico por talhão e safra.
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <a href="/soil/analyses" className="inline-flex min-h-11 items-center rounded-xl bg-white px-4 text-sm font-semibold text-stone-800">
@@ -44,14 +46,18 @@ export default async function SoilPage() {
             <a href="/soil/soil-fertilizations" className="inline-flex min-h-11 items-center rounded-xl bg-white px-4 text-sm font-semibold text-stone-800">
               {canManage ? "Registrar adubação via solo" : "Consultar adubações"}
             </a>
+            <a href="/soil/foliar-fertilizations" className="inline-flex min-h-11 items-center rounded-xl bg-emerald-700 px-4 text-sm font-semibold text-white ring-1 ring-emerald-300">
+              {canManage ? "Registrar adubação via folha" : "Consultar foliares"}
+            </a>
           </div>
         </section>
 
-        <section className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <section className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <Metric label="Análises registradas" value={String(summary.analysesCount)} helper="Registros ativos da propriedade." />
           <Metric label="Laudos anexados" value={String(summary.reportsCount)} helper="Arquivos guardados no Storage privado." />
           <Metric label="Correções registradas" value={String(correctionSummary.correctionsCount)} helper={`${formatSoilDecimal(correctionSummary.totalQuantityT)} t de corretivo registradas.`} />
           <Metric label="Adubações via solo" value={String(fertilizationSummary.fertilizationsCount)} helper={`${formatSoilDecimal(fertilizationSummary.totalQuantityKg)} kg de insumo registrados.`} />
+          <Metric label="Adubações via folha" value={String(foliarSummary.fertilizationsCount)} helper={`${formatSoilDecimal(foliarSummary.totalSprayVolumeLHa)} L/ha de calda registrados.`} />
         </section>
 
         <section className="mt-4 rounded-2xl border bg-white p-5">

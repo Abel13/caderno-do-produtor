@@ -8,6 +8,7 @@ const actionLabels: Record<string, string> = {
   analise_solo: "Registrar análise de solo",
   correcao_solo: "Registrar correção do solo",
   adubacao_solo: "Registrar adubação via solo",
+  adubacao_foliar: "Registrar adubação via folha",
   aplicacao: "Registrar aplicação",
   monitoramento: "Registrar monitoramento",
 };
@@ -59,6 +60,12 @@ function operationHref(recordType: string, seasonId?: string | null) {
     const query = params.toString();
     return `/soil/soil-fertilizations${query ? `?${query}` : ""}`;
   }
+  if (recordType === "adubacao_foliar") {
+    const params = new URLSearchParams();
+    if (seasonId) params.set("seasonId", seasonId);
+    const query = params.toString();
+    return `/soil/foliar-fertilizations${query ? `?${query}` : ""}`;
+  }
   const params = new URLSearchParams({ recordType });
   if (seasonId) params.set("seasonId", seasonId);
   return `/operations?${params.toString()}`;
@@ -69,7 +76,7 @@ function buildQuickActions(canManage: boolean, activeSeason: DashboardSeason | n
     return [{ key: "consultar", label: "Consultar operações", description: "Veja o histórico permitido para seu acesso.", href: "/operations", kind: "primary" }];
   }
 
-  return ["chuva", "irrigacao", "producao", "analise_solo", "correcao_solo", "adubacao_solo"].map((recordType, index) => ({
+  return ["chuva", "irrigacao", "producao", "analise_solo", "correcao_solo", "adubacao_solo", "adubacao_foliar"].map((recordType, index) => ({
     key: recordType,
     label: actionLabels[recordType],
     description: recordType === "chuva"
@@ -84,7 +91,9 @@ function buildQuickActions(canManage: boolean, activeSeason: DashboardSeason | n
               ? "Preencha a aplicação de corretivo realizada."
               : recordType === "adubacao_solo"
                 ? "Preencha a adubação via solo realizada."
-                : "Crie um registro rápido com contexto da propriedade.",
+                : recordType === "adubacao_foliar"
+                  ? "Registre a aplicação foliar e os componentes da mistura."
+                  : "Crie um registro rápido com contexto da propriedade.",
     href: operationHref(recordType, activeSeason?.id),
     kind: index === 0 ? "primary" : "secondary",
   }));

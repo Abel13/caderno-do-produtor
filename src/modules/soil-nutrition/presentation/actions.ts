@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
-import { soilAnalysisSchema, soilCorrectionSchema, soilFertilizationSchema } from "../domain/schemas";
+import { foliarFertilizationSchema, soilAnalysisSchema, soilCorrectionSchema, soilFertilizationSchema } from "../domain/schemas";
 import { SoilNutritionRepository } from "../infrastructure/supabase/soil-nutrition-repository";
 import { soilErrorState } from "./action-errors";
 import type { SoilActionState } from "./action-state";
@@ -24,8 +24,51 @@ function revalidateSoil() {
   revalidatePath("/soil/analyses");
   revalidatePath("/soil/corrections");
   revalidatePath("/soil/soil-fertilizations");
+  revalidatePath("/soil/foliar-fertilizations");
   revalidatePath("/dashboard");
   revalidatePath("/operations");
+}
+
+export async function createFoliarFertilizationAction(_: SoilActionState, formData: FormData): Promise<SoilActionState> {
+  try {
+    const input = foliarFertilizationSchema.parse(readFoliarFertilizationForm(formData));
+    await (await repository()).createFoliarFertilization(input);
+    revalidateSoil();
+    return { status: "success", message: "Adubação via folha registrada com sucesso." };
+  } catch (error) {
+    return { ...soilErrorState(error), values: valuesOf(formData) };
+  }
+}
+
+export async function updateFoliarFertilizationAction(_: SoilActionState, formData: FormData): Promise<SoilActionState> {
+  try {
+    const input = foliarFertilizationSchema.parse(readFoliarFertilizationForm(formData));
+    await (await repository()).updateFoliarFertilization(input);
+    revalidateSoil();
+    return { status: "success", message: "Adubação via folha atualizada." };
+  } catch (error) {
+    return { ...soilErrorState(error), values: valuesOf(formData) };
+  }
+}
+
+export async function deleteFoliarFertilizationAction(_: SoilActionState, formData: FormData): Promise<SoilActionState> {
+  try {
+    await (await repository()).deleteFoliarFertilization(String(formData.get("foliarFertilizationId") ?? ""));
+    revalidateSoil();
+    return { status: "success", message: "Adubação foliar apagada logicamente. Ela permanece no histórico." };
+  } catch (error) {
+    return soilErrorState(error);
+  }
+}
+
+export async function restoreFoliarFertilizationAction(_: SoilActionState, formData: FormData): Promise<SoilActionState> {
+  try {
+    await (await repository()).restoreFoliarFertilization(String(formData.get("foliarFertilizationId") ?? ""));
+    revalidateSoil();
+    return { status: "success", message: "Adubação foliar restaurada." };
+  } catch (error) {
+    return soilErrorState(error);
+  }
 }
 
 export async function createSoilFertilizationAction(_: SoilActionState, formData: FormData): Promise<SoilActionState> {
@@ -254,5 +297,40 @@ function readSoilFertilizationForm(formData: FormData) {
     responsibleName: formData.get("responsibleName"),
     notes: formData.get("notes"),
     clientId: formData.get("clientId"),
+  };
+}
+
+function readFoliarFertilizationForm(formData: FormData) {
+  const productNames = formData.getAll("componentProductName");
+  const doseValues = formData.getAll("componentDoseValue");
+  const doseUnits = formData.getAll("componentDoseUnit");
+  const totalQuantities = formData.getAll("componentTotalQuantity");
+  const componentNotes = formData.getAll("componentNotes");
+  return {
+    propertyId: formData.get("propertyId"),
+    foliarFertilizationId: formData.get("foliarFertilizationId"),
+    plotId: formData.get("plotId"),
+    plantingId: formData.get("plantingId"),
+    seasonId: formData.get("seasonId"),
+    appliedOn: formData.get("appliedOn"),
+    purpose: formData.get("purpose"),
+    sprayVolumeLHa: formData.get("sprayVolumeLHa"),
+    temperatureC: formData.get("temperatureC"),
+    humidityPct: formData.get("humidityPct"),
+    windSpeedKmH: formData.get("windSpeedKmH"),
+    weatherNotes: formData.get("weatherNotes"),
+    laborType: formData.get("laborType"),
+    laborQuantity: formData.get("laborQuantity"),
+    fuelL: formData.get("fuelL"),
+    responsibleName: formData.get("responsibleName"),
+    notes: formData.get("notes"),
+    clientId: formData.get("clientId"),
+    components: productNames.map((productName, index) => ({
+      productName,
+      doseValue: doseValues[index],
+      doseUnit: doseUnits[index],
+      totalQuantity: totalQuantities[index],
+      notes: componentNotes[index],
+    })),
   };
 }

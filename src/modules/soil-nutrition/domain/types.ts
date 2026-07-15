@@ -123,6 +123,41 @@ export interface SoilFertilizationRecord {
   };
 }
 
+export interface FoliarFertilizationComponent {
+  id: string;
+  product_name: string;
+  dose_value: string;
+  dose_unit: string;
+  total_quantity: string | null;
+  notes: string | null;
+}
+
+export interface FoliarFertilizationRecord {
+  id: string;
+  operational_record_id: string;
+  property_id: string;
+  plot_id: string;
+  planting_id: string | null;
+  season_id: string | null;
+  applied_on: string;
+  purpose: string;
+  spray_volume_l_ha: string | null;
+  temperature_c: string | null;
+  humidity_pct: string | null;
+  wind_speed_km_h: string | null;
+  weather_notes: string | null;
+  labor_type: "hh" | "hm" | null;
+  labor_quantity: string | null;
+  fuel_l: string | null;
+  responsible_name: string | null;
+  notes: string | null;
+  components: FoliarFertilizationComponent[];
+  operational_record: {
+    status: "draft" | "confirmed" | "cancelled" | "review_required";
+    deleted_at: string | null;
+  };
+}
+
 export interface SoilSummary {
   analysesCount: number;
   reportsCount: number;
@@ -138,5 +173,11 @@ export interface SoilCorrectionSummary {
 export interface SoilFertilizationSummary {
   fertilizationsCount: number;
   totalQuantityKg: string;
+  latestAppliedOn: string | null;
+}
+
+export interface FoliarFertilizationSummary {
+  fertilizationsCount: number;
+  totalSprayVolumeLHa: string;
   latestAppliedOn: string | null;
 }
