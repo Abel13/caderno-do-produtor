@@ -43,6 +43,67 @@ O eixo principal do produto é digitalizar o Caderno do Produtor. A ordem de imp
 | 15 | Relatórios e inteligência | Indicadores, comparações, exportações e visão consolidada. |
 | 16 | Consolidação do produto | Validação integrada dos 21 controles e prontidão operacional. |
 
+## 3.1 Status atual do roadmap
+
+Este status registra o que já existe no repositório para evitar replanejar módulos já entregues. Ele deve ser atualizado a cada módulo implementado.
+
+Data da última revisão: 15/07/2026.
+
+Legenda:
+
+- **Pronto no repositório:** possui telas, migrations, regras principais, ações/repositórios e testes relacionados.
+- **Parcial:** existe base funcional, mas ainda falta parte relevante do escopo previsto no roadmap.
+- **Pendente:** ainda não possui implementação dedicada.
+- **Não validado nesta revisão:** o status foi conferido por inspeção do repositório; a suíte completa de validação ainda deve ser executada.
+
+| Etapa | Módulo | Status | Evidência principal | Próximo ponto aberto |
+|---|---|---|---|---|
+| 0 | Fundação técnica | Parcial | Next.js, TypeScript, Tailwind, Supabase local, scripts de portas, testes e padrões em `AGENTS.md`. | Confirmar suíte completa, CI/observabilidade e ambientes finais. |
+| 1 | Identidade e organizações | Pronto no repositório | Login Google, onboarding, convites, papéis, RLS e página de acessos. | Validar fluxo autenticado e testes de RLS em ambiente local. |
+| 2 | Estrutura rural | Pronto no repositório | Migrations e telas para propriedades, talhões, lavouras, safras e vínculo lavoura-safra. | Validar casos de histórico e permissões com banco local. |
+| 3 | Plataforma operacional | Parcial | Backbone de registros operacionais, filtros, auditoria, estados e páginas operacionais. | Anexos/Storage, busca global, lembretes e catálogos completos. |
+| 4 | Dashboard e navegação | Pronto no repositório | Dashboard contextual com propriedade ativa, resumos e atalhos por ficha implementada. | Evoluir indicadores conforme novos módulos. |
+| 5 | Clima e água | Pronto no repositório | RF-01, RF-12 e RF-13 implementados em clima/chuva/irrigação. | Gráficos avançados, alertas e exportação final. |
+| 6 | Solo e nutrição | Parcial | RF-04, RF-05 e RF-06 implementados. | RF-07 Adubação via folha e importação PDF/OCR de laudos. |
+| 7 | Fitossanidade | Pendente | Sem módulo dedicado encontrado. | Implementar RF-08, RF-09 e RF-10. |
+| 8 | Formação, produção e podas | Parcial | RF-02 coberto pela estrutura rural; RF-03 produção implementada. | RF-11 podas e complementos de formação de lavoura. |
+| 9 | Colheita e pós-colheita | Pendente | Sem módulo dedicado encontrado. | Implementar RF-14 e RF-15. |
+| 10 | Máquinas e manutenção | Pendente | Sem módulo dedicado encontrado. | Implementar RF-16. |
+| 11 | Gestão financeira | Pendente | Sem módulo dedicado encontrado. | Implementar RF-17, RF-18 e RF-19. |
+| 12 | Assistência técnica | Pendente | Sem módulo dedicado encontrado. | Implementar RF-20 e RF-21. |
+| 13 | Documentos e PDF | Pendente | Sem pipeline de upload/OCR/revisão encontrado. | Começar por laudos de análise de solo. |
+| 14 | Offline e sincronização | Pendente | Sem fila offline dedicada encontrada. | Definir rascunhos locais, idempotência e conflitos. |
+| 15 | Relatórios e inteligência | Pendente | Sem módulo dedicado encontrado. | Implementar relatórios após amadurecimento dos módulos de dados. |
+| 16 | Consolidação do produto | Pendente | Depende da cobertura integral. | Validar os 21 controles e jornadas integradas. |
+
+### Cobertura atual dos requisitos funcionais
+
+| Requisito | Controle | Status |
+|---|---|---|
+| RF-01 | Controle pluviométrico | Pronto no repositório |
+| RF-02 | Formação de lavouras e cadastro de áreas | Parcial, coberto pela estrutura rural |
+| RF-03 | Controle de produção | Pronto no repositório |
+| RF-04 | Análises de solo | Pronto no repositório |
+| RF-05 | Correção do solo | Pronto no repositório |
+| RF-06 | Adubação via solo | Pronto no repositório |
+| RF-07 | Adubação via folha | Pendente |
+| RF-08 | Monitoramento de pragas e doenças | Pendente |
+| RF-09 | Manejo de pragas e doenças | Pendente |
+| RF-10 | Manejo de plantas daninhas | Pendente |
+| RF-11 | Monitoramento de podas | Pendente |
+| RF-12 | Controle climático diário | Pronto no repositório |
+| RF-13 | Controle da irrigação | Pronto no repositório |
+| RF-14 | Controle da colheita | Pendente |
+| RF-15 | Controle pós-colheita | Pendente |
+| RF-16 | Controle de manutenções | Pendente |
+| RF-17 | Controle de despesas | Pendente |
+| RF-18 | Controle de receitas | Pendente |
+| RF-19 | Fluxo de caixa | Pendente |
+| RF-20 | Recomendações técnicas e gerenciais | Pendente |
+| RF-21 | Acompanhamento das recomendações e produção | Pendente |
+
+Próxima implementação recomendada pelo status atual: **RF-07 — Adubação via folha**, para concluir o bloco funcional inicial de Solo e Nutrição antes de avançar para Fitossanidade.
+
 ## 4. Etapa 0 — Fundação técnica
 
 ### Objetivo

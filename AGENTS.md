@@ -15,6 +15,8 @@ Antes de implementar uma funcionalidade, consulte:
 - `docs/roadmap-de-implementacao.md` para ordem e dependências dos módulos.
 - `docs/desenvolvimento-local.md` para portas e ambiente local.
 
+Ao concluir qualquer funcionalidade, correção ou refatoração que altere o status de um módulo, etapa ou requisito funcional, atualize a seção **Status atual do roadmap** em `docs/roadmap-de-implementacao.md`. O roadmap deve refletir o estado real do repositório, distinguindo claramente o que está pronto no código, parcial, pendente e o que ainda não foi validado pela suíte completa.
+
 Em caso de divergência entre código, documentação e regra agronômica, não assuma silenciosamente. Registre a inconsistência e solicite validação.
 
 ## 3. Princípios de desenvolvimento
@@ -350,7 +352,7 @@ Uma funcionalidade está pronta apenas quando:
 8. Fluxos críticos possuem cobertura E2E.
 9. A interface é responsiva e acessível.
 10. Lint, tipos, testes e build passam sem supressões indevidas.
-11. Documentação foi atualizada.
+11. Documentação foi atualizada, incluindo o **Status atual do roadmap** quando houver mudança de cobertura, módulo, etapa ou RF.
 12. O commit segue Conventional Commits.
 
 ## 21. Restrições de escopo
