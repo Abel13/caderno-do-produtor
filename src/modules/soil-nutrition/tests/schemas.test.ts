@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { calculateCorrectionTotal, calculateSoilFertilizationTotal, formatSoilDecimal, soilAnalysisStatusLabel, summarizeSoilAnalyses, summarizeSoilCorrections, summarizeSoilFertilizations } from "../domain/rules";
-import { soilAnalysisSchema, soilCorrectionSchema, soilFertilizationSchema } from "../domain/schemas";
+import { calculateCorrectionTotal, calculateSoilFertilizationTotal, formatSoilDecimal, soilAnalysisStatusLabel, summarizeFoliarFertilizations, summarizeSoilAnalyses, summarizeSoilCorrections, summarizeSoilFertilizations } from "../domain/rules";
+import { foliarFertilizationSchema, soilAnalysisSchema, soilCorrectionSchema, soilFertilizationSchema } from "../domain/schemas";
 
 const uuid = "11111111-1111-4111-8111-111111111111";
 
@@ -274,6 +274,113 @@ describe("soil nutrition schemas", () => {
 
     expect(summary.fertilizationsCount).toBe(1);
     expect(summary.totalQuantityKg).toBe("2375");
+    expect(summary.latestAppliedOn).toBe("2026-07-10");
+  });
+
+  it("valida ficha de adubação via folha com componentes de mistura", () => {
+    const result = foliarFertilizationSchema.parse({
+      propertyId: uuid,
+      plotId: uuid,
+      plantingId: "",
+      seasonId: "",
+      appliedOn: "2026-07-10",
+      purpose: "Nutrição foliar pós-florada",
+      sprayVolumeLHa: "400,5",
+      temperatureC: "24,8",
+      humidityPct: "68",
+      windSpeedKmH: "5,5",
+      weatherNotes: "Manhã sem chuva.",
+      laborType: "hh",
+      laborQuantity: "3",
+      fuelL: "11,5",
+      responsibleName: "Alex",
+      notes: "Registro realizado.",
+      components: [
+        { productName: "Boro", doseValue: "1,5", doseUnit: "L/ha", totalQuantity: "12", notes: "" },
+        { productName: "Zinco", doseValue: "250", doseUnit: "mL/100 L", totalQuantity: "", notes: "Mistura compatível." },
+      ],
+    });
+
+    expect(result.plantingId).toBeNull();
+    expect(result.sprayVolumeLHa).toBe(400.5);
+    expect(result.temperatureC).toBe(24.8);
+    expect(result.components).toHaveLength(2);
+    expect(result.components[1].totalQuantity).toBeNull();
+  });
+
+  it("bloqueia ficha foliar sem componente ou com valores inválidos", () => {
+    const withoutComponents = foliarFertilizationSchema.safeParse({
+      propertyId: uuid,
+      plotId: uuid,
+      appliedOn: "2026-07-10",
+      purpose: "Nutrição",
+      components: [],
+    });
+    const invalidValues = foliarFertilizationSchema.safeParse({
+      propertyId: uuid,
+      plotId: uuid,
+      appliedOn: "2026-07-10",
+      purpose: "Nutrição",
+      sprayVolumeLHa: "-1",
+      humidityPct: "101",
+      laborQuantity: "2",
+      components: [{ productName: "Boro", doseValue: "-1", doseUnit: "L/ha" }],
+    });
+
+    expect(withoutComponents.success).toBe(false);
+    expect(invalidValues.success).toBe(false);
+  });
+
+  it("resume adubações foliares ativas", () => {
+    const summary = summarizeFoliarFertilizations([
+      {
+        id: "1",
+        operational_record_id: "op",
+        property_id: "p",
+        plot_id: "plot",
+        planting_id: null,
+        season_id: null,
+        applied_on: "2026-07-10",
+        purpose: "Nutrição",
+        spray_volume_l_ha: "400",
+        temperature_c: "24",
+        humidity_pct: "68",
+        wind_speed_km_h: "5",
+        weather_notes: null,
+        labor_type: "hh",
+        labor_quantity: "3",
+        fuel_l: "11",
+        responsible_name: "Alex",
+        notes: null,
+        components: [{ id: "c1", product_name: "Boro", dose_value: "1.5", dose_unit: "L/ha", total_quantity: "12", notes: null }],
+        operational_record: { status: "confirmed", deleted_at: null },
+      },
+      {
+        id: "2",
+        operational_record_id: "op2",
+        property_id: "p",
+        plot_id: "plot",
+        planting_id: null,
+        season_id: null,
+        applied_on: "2026-07-11",
+        purpose: "Micronutrientes",
+        spray_volume_l_ha: "300",
+        temperature_c: null,
+        humidity_pct: null,
+        wind_speed_km_h: null,
+        weather_notes: null,
+        labor_type: null,
+        labor_quantity: null,
+        fuel_l: null,
+        responsible_name: null,
+        notes: null,
+        components: [{ id: "c2", product_name: "Zinco", dose_value: "250", dose_unit: "mL/100 L", total_quantity: null, notes: null }],
+        operational_record: { status: "confirmed", deleted_at: "2026-12-01T00:00:00Z" },
+      },
+    ]);
+
+    expect(summary.fertilizationsCount).toBe(1);
+    expect(summary.totalSprayVolumeLHa).toBe("400");
     expect(summary.latestAppliedOn).toBe("2026-07-10");
   });
 });

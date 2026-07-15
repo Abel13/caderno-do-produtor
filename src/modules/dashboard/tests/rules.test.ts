@@ -71,5 +71,6 @@ describe("dashboard rules", () => {
 
     expect(dashboard.metrics.find((metric) => metric.key === "production")?.value).toBe("120 sc");
     expect(dashboard.quickActions.some((action) => action.key === "producao" && action.href.includes("/production"))).toBe(true);
+    expect(dashboard.quickActions.some((action) => action.key === "adubacao_foliar" && action.href.includes("/soil/foliar-fertilizations"))).toBe(true);
   });
 });

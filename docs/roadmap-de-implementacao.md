@@ -64,7 +64,7 @@ Legenda:
 | 3 | Plataforma operacional | Parcial | Backbone de registros operacionais, filtros, auditoria, estados e páginas operacionais. | Anexos/Storage, busca global, lembretes e catálogos completos. |
 | 4 | Dashboard e navegação | Pronto no repositório | Dashboard contextual com propriedade ativa, resumos e atalhos por ficha implementada. | Evoluir indicadores conforme novos módulos. |
 | 5 | Clima e água | Pronto no repositório | RF-01, RF-12 e RF-13 implementados em clima/chuva/irrigação. | Gráficos avançados, alertas e exportação final. |
-| 6 | Solo e nutrição | Parcial | RF-04, RF-05 e RF-06 implementados. | RF-07 Adubação via folha e importação PDF/OCR de laudos. |
+| 6 | Solo e nutrição | Parcial | RF-04, RF-05, RF-06 e RF-07 implementados. | Importação PDF/OCR de laudos, recomendações e indicadores avançados. |
 | 7 | Fitossanidade | Pendente | Sem módulo dedicado encontrado. | Implementar RF-08, RF-09 e RF-10. |
 | 8 | Formação, produção e podas | Parcial | RF-02 coberto pela estrutura rural; RF-03 produção implementada. | RF-11 podas e complementos de formação de lavoura. |
 | 9 | Colheita e pós-colheita | Pendente | Sem módulo dedicado encontrado. | Implementar RF-14 e RF-15. |
@@ -86,7 +86,7 @@ Legenda:
 | RF-04 | Análises de solo | Pronto no repositório |
 | RF-05 | Correção do solo | Pronto no repositório |
 | RF-06 | Adubação via solo | Pronto no repositório |
-| RF-07 | Adubação via folha | Pendente |
+| RF-07 | Adubação via folha | Pronto no repositório |
 | RF-08 | Monitoramento de pragas e doenças | Pendente |
 | RF-09 | Manejo de pragas e doenças | Pendente |
 | RF-10 | Manejo de plantas daninhas | Pendente |
@@ -102,7 +102,7 @@ Legenda:
 | RF-20 | Recomendações técnicas e gerenciais | Pendente |
 | RF-21 | Acompanhamento das recomendações e produção | Pendente |
 
-Próxima implementação recomendada pelo status atual: **RF-07 — Adubação via folha**, para concluir o bloco funcional inicial de Solo e Nutrição antes de avançar para Fitossanidade.
+Próxima implementação recomendada pelo status atual: **Etapa 7 — Fitossanidade**, começando por RF-08 Monitoramento de pragas e doenças.
 
 ## 4. Etapa 0 — Fundação técnica
 
